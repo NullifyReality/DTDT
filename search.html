@@ -363,88 +363,201 @@
         }
 
         // Display results
-        function displayResults(companies) {
-            if (!companies || companies.length === 0) {
-                resultsContainer.innerHTML = `
-                    <div class="alert alert-warning">
-                        No companies found matching your search criteria.
-                        <button class="btn btn-sm btn-outline-warning ms-2" onclick="resetFilters()">Reset Filters</button>
-                    </div>
-                `;
-                return;
-            }
-            
-            let html = '<div class="accordion" id="resultsAccordion">';
-            
-            companies.forEach((company, index) => {
-                const accordionId = `accordion-${index}`;
-                const collapseId = `collapse-${index}`;
-                
-                // Determine badge color based on testing policy
-                let badgeColor = 'bg-secondary';
-                let badgeText = 'Unknown';
-                
-                if (company.tests_required === false && company.random_tests === false && 
-                    company.after_accident === false && company.during_hiring === false) {
-                    badgeColor = 'bg-success';
-                    badgeText = 'No Tests';
-                } else if (company.tests_required === true || company.random_tests === true) {
-                    badgeColor = 'bg-danger';
-                    badgeText = 'Tests';
-                } else if (company.during_hiring === true) {
-                    badgeColor = 'bg-warning';
-                    badgeText = 'Hiring Test';
-                }
-                
-                // Build policy description
-                const policies = [];
-                if (company.tests_required) policies.push('Requires testing');
-                if (company.random_tests) policies.push('Random tests');
-                if (company.after_accident) policies.push('After accidents');
-                if (company.during_hiring) policies.push('During hiring');
-                
-                const policyText = policies.length > 0 ? policies.join(', ') : 'No testing required';
-                
-                html += `
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
-                                <strong>${company.name}</strong>
-                                <span class="badge ${badgeColor} company-badge">${badgeText}</span>
-                                ${company.industry ? `<span class="badge bg-info company-badge">${company.industry}</span>` : ''}
-                            </button>
-                        </h2>
-                        <div id="${collapseId}" class="accordion-collapse collapse" data-bs-parent="#resultsAccordion">
-                            <div class="accordion-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <p><strong>Industry:</strong> ${company.industry || 'Not specified'}</p>
-                                        <p><strong>Testing Policy:</strong> ${policyText}</p>
-                                        <p><strong>Test Type:</strong> ${company.test_type || 'Not specified'}</p>
-                                        <p><strong>Frequency:</strong> ${company.test_frequency || 'Not specified'}</p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <h6>Testing Details:</h6>
-                                        <ul class="list-unstyled">
-                                            <li>Tests Required: <span class="${company.tests_required ? 'test-yes' : 'test-no'}">${company.tests_required ? 'YES' : 'NO'}</span></li>
-                                            <li>Random Tests: <span class="${company.random_tests ? 'test-yes' : 'test-no'}">${company.random_tests ? 'YES' : 'NO'}</span></li>
-                                            <li>After Accident: <span class="${company.after_accident ? 'test-yes' : 'test-no'}">${company.after_accident ? 'YES' : 'NO'}</span></li>
-                                            <li>During Hiring: <span class="${company.during_hiring ? 'test-yes' : 'test-no'}">${company.during_hiring ? 'YES' : 'NO'}</span></li>
-                                        </ul>
-                                        ${company.states && Array.isArray(company.states) && company.states.length > 0 ? 
-                                            `<p><strong>Operates in:</strong> ${company.states.join(', ')}</p>` : ''}
-                                    </div>
-                                </div>
-                                ${company.policy_details ? `<p class="mt-2"><em>${company.policy_details}</em></p>` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            html += '</div>';
-            resultsContainer.innerHTML = html;
+        // Replace the displayResults function with this:
+function displayResults(companies, groupedResults = null) {
+    if (!companies || companies.length === 0) {
+        resultsContainer.innerHTML = `
+            <div class="alert alert-warning">
+                No companies found matching your search criteria.
+                <button class="btn btn-sm btn-outline-warning ms-2" onclick="resetFilters()">Reset Filters</button>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    
+    // If we have grouped results from the API, display them with sections
+    if (groupedResults && (groupedResults.exact_matches.length > 0 || groupedResults.industry_matches.length > 0)) {
+        // Exact matches section
+        if (groupedResults.exact_matches.length > 0) {
+            html += `
+                <div class="mb-4">
+                    <h4 class="text-success">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-check-circle me-2" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                            <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
+                        </svg>
+                        Exact Matches
+                    </h4>
+                    ${createCompaniesAccordion(groupedResults.exact_matches, 'exact')}
+                </div>
+            `;
         }
+        
+        // Industry matches section
+        if (groupedResults.industry_matches.length > 0) {
+            html += `
+                <div class="mb-4">
+                    <h4 class="text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-building me-2" viewBox="0 0 16 16">
+                            <path d="M4 2.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1Zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1Zm3.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1ZM4 5.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1ZM7.5 5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm2.5.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1ZM4.5 8a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm2.5.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1Zm3.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Z"/>
+                            <path d="M2 1a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V1Zm11 0H3v14h3v-2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5V15h3V1Z"/>
+                        </svg>
+                        Related Companies in Same Industry
+                    </h4>
+                    ${createCompaniesAccordion(groupedResults.industry_matches, 'industry')}
+                </div>
+            `;
+        }
+        
+        // Other matches section (if any)
+        if (groupedResults.other_matches.length > 0) {
+            html += `
+                <div class="mb-4">
+                    <h4 class="text-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search me-2" viewBox="0 0 16 16">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                        </svg>
+                        Other Relevant Companies
+                    </h4>
+                    ${createCompaniesAccordion(groupedResults.other_matches, 'other')}
+                </div>
+            `;
+        }
+        
+        // Total results count
+        const totalCompanies = companies.length;
+        html += `
+            <div class="alert alert-info mt-4">
+                <strong>${totalCompanies} companies found</strong> 
+                <span class="float-end">
+                    ${groupedResults.exact_matches.length} exact matches • 
+                    ${groupedResults.industry_matches.length} industry matches •
+                    ${groupedResults.other_matches.length} other relevant companies
+                </span>
+            </div>
+        `;
+        
+    } else {
+        // No grouping, just show all results
+        html = createCompaniesAccordion(companies, 'all');
+    }
+    
+    resultsContainer.innerHTML = html;
+}
+
+// Helper function to create accordion HTML
+function createCompaniesAccordion(companies, sectionId) {
+    if (!companies || companies.length === 0) return '';
+    
+    let html = `<div class="accordion" id="accordion-${sectionId}">`;
+    
+    companies.forEach((company, index) => {
+        const accordionItemId = `${sectionId}-${index}`;
+        const collapseId = `collapse-${accordionItemId}`;
+        
+        // Determine badge based on testing policy
+        const badgeInfo = getTestingBadge(company);
+        
+        // Build policy summary
+        const policies = getPolicySummary(company);
+        
+        html += `
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <div>
+                                <strong>${company.name}</strong>
+                                <span class="badge ${badgeInfo.color} company-badge">${badgeInfo.text}</span>
+                                ${company.industry ? `<span class="badge bg-info company-badge">${company.industry}</span>` : ''}
+                            </div>
+                            <small class="text-muted">${policies.summary}</small>
+                        </div>
+                    </button>
+                </h2>
+                <div id="${collapseId}" class="accordion-collapse collapse" data-bs-parent="#accordion-${sectionId}">
+                    <div class="accordion-body">
+                        ${createCompanyDetailsHTML(company, policies)}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    return html;
+}
+
+// Helper functions
+function getTestingBadge(company) {
+    if (!company.tests_required && !company.random_tests && 
+        !company.after_accident && !company.during_hiring) {
+        return { color: 'bg-success', text: 'No Tests' };
+    } else if (company.tests_required || company.random_tests) {
+        return { color: 'bg-danger', text: 'Regular Tests' };
+    } else if (company.during_hiring) {
+        return { color: 'bg-warning', text: 'Hiring Test' };
+    } else {
+        return { color: 'bg-secondary', text: 'Check Details' };
+    }
+}
+
+function getPolicySummary(company) {
+    const policies = [];
+    if (company.tests_required) policies.push('Testing Required');
+    if (company.random_tests) policies.push('Random Tests');
+    if (company.after_accident) policies.push('Post-Accident');
+    if (company.during_hiring) policies.push('Pre-Employment');
+    
+    const summary = policies.length > 0 ? policies.join(' • ') : 'No Testing Policy';
+    const details = policies.length > 0 ? policies.join(', ') : 'No drug testing requirements';
+    
+    return { summary, details };
+}
+
+function createCompanyDetailsHTML(company, policies) {
+    return `
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Industry:</strong> ${company.industry || 'Not specified'}</p>
+                ${company.description ? `<p><strong>Description:</strong> ${company.description}</p>` : ''}
+                <p><strong>Testing Policy:</strong> ${policies.details}</p>
+                ${company.test_type ? `<p><strong>Test Type:</strong> ${company.test_type}</p>` : ''}
+                ${company.test_frequency ? `<p><strong>Frequency:</strong> ${company.test_frequency}</p>` : ''}
+            </div>
+            <div class="col-md-6">
+                <h6>Testing Details:</h6>
+                <table class="table table-sm">
+                    <tr>
+                        <td>Tests Required:</td>
+                        <td><span class="${company.tests_required ? 'test-yes' : 'test-no'}">${company.tests_required ? 'YES' : 'NO'}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Random Tests:</td>
+                        <td><span class="${company.random_tests ? 'test-yes' : 'test-no'}">${company.random_tests ? 'YES' : 'NO'}</span></td>
+                    </tr>
+                    <tr>
+                        <td>After Accident:</td>
+                        <td><span class="${company.after_accident ? 'test-yes' : 'test-no'}">${company.after_accident ? 'YES' : 'NO'}</span></td>
+                    </tr>
+                    <tr>
+                        <td>During Hiring:</td>
+                        <td><span class="${company.during_hiring ? 'test-yes' : 'test-no'}">${company.during_hiring ? 'YES' : 'NO'}</span></td>
+                    </tr>
+                </table>
+                ${company.states && Array.isArray(company.states) && company.states.length > 0 ? 
+                    `<p><strong>Operates in:</strong> ${company.states.join(', ')}</p>` : ''}
+            </div>
+        </div>
+        ${company.policy_details ? `
+            <div class="mt-3 p-2 bg-light rounded">
+                <small><strong>Additional Notes:</strong> ${company.policy_details}</small>
+            </div>
+        ` : ''}
+    `;
+}
 
         // Preload page 2 (your queue requirement)
         async function preloadPage2() {
