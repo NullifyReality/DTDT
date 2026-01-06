@@ -260,107 +260,25 @@
         }
 
         // Perform search with filters
-        async function performSearch(page = 1) {
-            currentPage = page;
-            
-            if (!currentQuery && !searchInput.value.trim()) {
-                alert('Please enter a search term');
-                return;
-            }
-            
-            if (!currentQuery) {
-                currentQuery = searchInput.value.trim();
-            }
-            
-            // Build filters object
-            const filters = {
-                q: currentQuery,
-                page: page
-            };
-            
-            // Add boolean filters (only if not "any")
-            const testFilter = document.querySelector('input[name="tests_required"]:checked').id;
-            if (testFilter === 'tests_yes') filters.tests_required = true;
-            else if (testFilter === 'tests_no') filters.tests_required = false;
-            
-            const randomFilter = document.querySelector('input[name="random_tests"]:checked').id;
-            if (randomFilter === 'random_yes') filters.random_tests = true;
-            else if (randomFilter === 'random_no') filters.random_tests = false;
-            
-            const accidentFilter = document.querySelector('input[name="after_accident"]:checked').id;
-            if (accidentFilter === 'accident_yes') filters.after_accident = true;
-            else if (accidentFilter === 'accident_no') filters.after_accident = false;
-            
-            const hiringFilter = document.querySelector('input[name="during_hiring"]:checked').id;
-            if (hiringFilter === 'hiring_yes') filters.during_hiring = true;
-            else if (hiringFilter === 'hiring_no') filters.during_hiring = false;
-            
-            // Add location filter
-            const state = document.getElementById('stateFilter').value;
-            if (state) filters.location = state;
-            
-            currentFilters = filters;
-            
-            // Show loading
-            loadingSpinner.style.display = 'block';
-            resultsContainer.innerHTML = '';
-            resultsInfo.style.display = 'none';
-            pagination.style.display = 'none';
-            
-            try {
-                // Build URL with filters
-                const url = new URL(`${API_BASE}/api/search`);
-                Object.keys(filters).forEach(key => {
-                    if (filters[key] !== undefined && filters[key] !== '') {
-                        url.searchParams.append(key, filters[key]);
-                    }
-                });
-                
-                const response = await fetch(url);
-                
-                if (!response.ok) {
-                    throw new Error(`API error: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                
-                // Update state
-                totalResults = data.total || data.results.length;
-                hasNextPage = data.has_next || false;
-                
-                // Display results
-                displayResults(data.results);
-                
-                // Update UI
-                resultsCount.textContent = totalResults;
-                pageInfo.textContent = `Page ${page}`;
-                currentPageSpan.textContent = page;
-                
-                // Update pagination buttons
-                prevPageBtn.disabled = page === 1;
-                nextPageBtn.disabled = !hasNextPage;
-                
-                // Show UI elements
-                resultsInfo.style.display = 'block';
-                pagination.style.display = 'flex';
-                
-                // Preload page 2 if available (your queue requirement)
-                if (hasNextPage && !page2Preloaded && page === 1) {
-                    preloadPage2();
-                }
-                
-            } catch (error) {
-                console.error('Search error:', error);
-                resultsContainer.innerHTML = `
-                    <div class="alert alert-danger">
-                        <strong>Search failed:</strong> ${error.message}<br>
-                        Try again or check if the API is running.
-                    </div>
-                `;
-            } finally {
-                loadingSpinner.style.display = 'none';
-            }
-        }
+        // In the performSearch function, update the display call:
+const data = await response.json();
+
+// Update state
+totalResults = data.total || data.results.length;
+hasNextPage = data.has_next || false;
+
+// Display results with grouping if available
+if (data.grouped_results) {
+    displayResults(data.results, data.grouped_results);
+} else {
+    displayResults(data.results);
+}
+
+// Show search type info if available
+if (data.search_type === 'job_title' && data.mapped_industries && data.mapped_industries.length > 0) {
+    document.getElementById('api-status').innerHTML = 
+        `<strong>Searching for "${currentQuery}" jobs in:</strong> ${data.mapped_industries.join(', ')}`;
+}
 
         // Display results
         // Replace the displayResults function with this:
