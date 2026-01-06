@@ -220,468 +220,212 @@
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>
     <script src="assets/js/script.min.js"></script>
     
-    // Add this script at the end of your search.html body, right before </body>
-<script>
     // API Configuration
-    const API_BASE = window.location.hostname === 'localhost' 
-        ? 'http://localhost:8000' 
-        : 'https://api.dotheydrugtest.com';
-    
-    // State management
-    let currentPage = 1;
-    let currentQuery = '';
-    let currentFilters = {};
-    let totalResults = 0;
-    let hasNextPage = false;
+const API_BASE = window.location.hostname === 'localhost' 
+    ? 'http://localhost:8000' 
+    : 'https://api.dotheydrugtest.com';
 
-    // DOM Elements
+// State
+let currentPage = 1;
+let currentQuery = '';
+let totalResults = 0;
+let hasNextPage = false;
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Get URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const query = urlParams.get('q');
+    
+    if (query !== null) {
+        document.getElementById('Search-Bar-1').value = query;
+        currentQuery = query;
+        performSearch(1);
+    } else {
+        performSearch(1);
+    }
+    
+    // Setup event listeners
+    setupEventListeners();
+});
+
+function setupEventListeners() {
+    // Search button
+    const searchBtn = document.getElementById('StartSearch');
+    if (searchBtn) {
+        searchBtn.addEventListener('click', function() {
+            performSearch(1);
+        });
+    }
+    
+    // Search input enter key
     const searchInput = document.getElementById('Search-Bar-1');
-    const searchButton = document.getElementById('StartSearch');
-    const resultsContainer = document.getElementById('resultsContainer');
-    const loadingSpinner = document.getElementById('loadingSpinner');
-    const resultsInfo = document.getElementById('resultsInfo');
-    const resultsCount = document.getElementById('resultsCount');
-    const pageInfo = document.getElementById('pageInfo');
-    const pagination = document.getElementById('pagination');
-    const currentPageSpan = document.getElementById('currentPage');
-    const prevPageBtn = document.getElementById('prevPage');
-    const nextPageBtn = document.getElementById('nextPage');
-    
-    // Initialize results container if it doesn't exist
-    if (!resultsContainer) {
-        const newContainer = document.createElement('div');
-        newContainer.id = 'resultsContainer';
-        newContainer.className = 'mt-4';
-        // Insert after the search section
-        const searchSection = document.querySelector('section');
-        if (searchSection) {
-            searchSection.appendChild(newContainer);
-        }
-    }
-
-    // Initialize from URL parameters
-    function initFromURL() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const query = urlParams.get('q');
-        
-        if (query !== null) {  // Allow empty string!
-            searchInput.value = query;
-            currentQuery = query;
-            setTimeout(() => performSearch(1), 100);
-        } else {
-            // No query in URL - user can still search with filters only
-            setTimeout(() => performSearch(1), 100);
-        }
-    }
-
-    // Perform search with ALL filters
-    async function performSearch(page = 1) {
-        currentPage = page;
-        
-        // Get current query (can be empty string!)
-        currentQuery = searchInput ? searchInput.value.trim() : '';
-        
-        // Build filters object
-        const filters = {
-            q: currentQuery,  // Can be empty string!
-            page: page
-        };
-        
-        // Get filter values from UI
-        try {
-            // Boolean filters (Yes/No/Any)
-            const testsFilter = document.querySelector('input[name="tests_required"]:checked');
-            if (testsFilter && testsFilter.id !== 'tests_any') {
-                filters.tests_required = testsFilter.id === 'tests_yes';
-            }
-            
-            const randomFilter = document.querySelector('input[name="random_tests"]:checked');
-            if (randomFilter && randomFilter.id !== 'random_any') {
-                filters.random_tests = randomFilter.id === 'random_yes';
-            }
-            
-            const accidentFilter = document.querySelector('input[name="after_accident"]:checked');
-            if (accidentFilter && accidentFilter.id !== 'accident_any') {
-                filters.after_accident = accidentFilter.id === 'accident_yes';
-            }
-            
-            const hiringFilter = document.querySelector('input[name="during_hiring"]:checked');
-            if (hiringFilter && hiringFilter.id !== 'hiring_any') {
-                filters.during_hiring = hiringFilter.id === 'hiring_yes';
-            }
-            
-            // Location filter
-            const stateSelect = document.getElementById('stateFilter');
-            if (stateSelect && stateSelect.value) {
-                filters.location = stateSelect.value;
-            }
-        } catch (e) {
-            console.log('Filters not yet available in DOM');
-        }
-        
-        currentFilters = filters;
-        
-        // Show loading
-        if (loadingSpinner) loadingSpinner.style.display = 'block';
-        if (resultsContainer) resultsContainer.innerHTML = '';
-        if (resultsInfo) resultsInfo.style.display = 'none';
-        if (pagination) pagination.style.display = 'none';
-        
-        try {
-            // Build URL with filters
-            const url = new URL(`${API_BASE}/api/search`);
-            Object.keys(filters).forEach(key => {
-                // IMPORTANT: Send empty string for blank search, not undefined
-                const value = filters[key];
-                if (value !== undefined && value !== null) {
-                    url.searchParams.append(key, value);
-                }
-            });
-            
-            console.log('Fetching:', url.toString());
-            const response = await fetch(url);
-            
-            if (!response.ok) {
-                throw new Error(`API error: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            if (data.error) {
-                throw new Error(data.error);
-            }
-            
-            // Update state
-            totalResults = data.total || data.results.length;
-            hasNextPage = data.has_next || false;
-            
-            // Display results
-            displayResults(data.results, data.grouped_results);
-            
-            // Update UI
-            if (resultsCount) resultsCount.textContent = totalResults;
-            if (pageInfo) pageInfo.textContent = `Page ${page}`;
-            if (currentPageSpan) currentPageSpan.textContent = page;
-            
-            // Update pagination buttons
-            if (prevPageBtn) prevPageBtn.disabled = page === 1;
-            if (nextPageBtn) nextPageBtn.disabled = !hasNextPage;
-            
-            // Show UI elements
-            if (resultsInfo) resultsInfo.style.display = 'block';
-            if (pagination) pagination.style.display = 'flex';
-            
-            // Update URL without reload (except for empty query)
-            if (currentQuery !== '') {
-                const url = new URL(window.location);
-                url.searchParams.set('q', currentQuery);
-                window.history.pushState({}, '', url);
-            }
-            
-        } catch (error) {
-            console.error('Search error:', error);
-            if (resultsContainer) {
-                resultsContainer.innerHTML = `
-                    <div class="alert alert-danger">
-                        <strong>Search failed:</strong> ${error.message}<br>
-                        <button class="btn btn-sm btn-outline-danger mt-2" onclick="retrySearch()">Retry</button>
-                        <button class="btn btn-sm btn-outline-warning mt-2 ms-2" onclick="resetFilters()">Reset Filters</button>
-                    </div>
-                `;
-            }
-        } finally {
-            if (loadingSpinner) loadingSpinner.style.display = 'none';
-        }
-    }
-
-    // Display results with grouping
-    function displayResults(companies, groupedResults = null) {
-        if (!resultsContainer) return;
-        
-        if (!companies || companies.length === 0) {
-            resultsContainer.innerHTML = `
-                <div class="alert alert-warning">
-                    No companies found matching your criteria.
-                    <button class="btn btn-sm btn-outline-warning ms-2" onclick="resetFilters()">Reset Filters</button>
-                </div>
-            `;
-            return;
-        }
-        
-        let html = '';
-        
-        // If we have grouped results, display with sections
-        if (groupedResults && (groupedResults.exact_matches.length > 0 || groupedResults.industry_matches.length > 0)) {
-            // Exact matches section
-            if (groupedResults.exact_matches.length > 0) {
-                html += `
-                    <div class="mb-4">
-                        <h4 class="text-success">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-check-circle me-2" viewBox="0 0 16 16">
-                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
-                            </svg>
-                            Exact Matches (${groupedResults.exact_matches.length})
-                        </h4>
-                        ${createCompaniesAccordion(groupedResults.exact_matches, 'exact')}
-                    </div>
-                `;
-            }
-            
-            // Industry matches section
-            if (groupedResults.industry_matches.length > 0) {
-                html += `
-                    <div class="mb-4">
-                        <h4 class="text-primary">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-building me-2" viewBox="0 0 16 16">
-                                <path d="M4 2.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1Zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1Zm3.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1ZM4 5.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1ZM7.5 5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm2.5.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1ZM4.5 8a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Zm2.5.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1Zm3.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1Z"/>
-                                <path d="M2 1a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V1Zm11 0H3v14h3v-2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5V15h3V1Z"/>
-                            </svg>
-                            Related Companies in Same Industry (${groupedResults.industry_matches.length})
-                        </h4>
-                        ${createCompaniesAccordion(groupedResults.industry_matches, 'industry')}
-                    </div>
-                `;
-            }
-            
-            // Other matches section
-            if (groupedResults.other_matches && groupedResults.other_matches.length > 0) {
-                html += `
-                    <div class="mb-4">
-                        <h4 class="text-secondary">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search me-2" viewBox="0 0 16 16">
-                                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-                            </svg>
-                            Other Relevant Companies (${groupedResults.other_matches.length})
-                        </h4>
-                        ${createCompaniesAccordion(groupedResults.other_matches, 'other')}
-                    </div>
-                `;
-            }
-            
-            // Total summary
-            html += `
-                <div class="alert alert-info mt-4">
-                    <strong>${companies.length} companies found</strong>
-                    <span class="float-end">
-                        ${groupedResults.exact_matches.length} exact • 
-                        ${groupedResults.industry_matches.length} industry •
-                        ${groupedResults.other_matches ? groupedResults.other_matches.length : 0} other
-                    </span>
-                </div>
-            `;
-            
-        } else {
-            // No grouping, show all
-            html = createCompaniesAccordion(companies, 'all');
-        }
-        
-        resultsContainer.innerHTML = html;
-        
-        // Initialize Bootstrap accordions
-        const accordions = resultsContainer.querySelectorAll('.accordion-button');
-        accordions.forEach(button => {
-            button.addEventListener('click', function() {
-                this.classList.toggle('collapsed');
-            });
-        });
-    }
-
-    // Helper: Create accordion HTML
-    function createCompaniesAccordion(companies, sectionId) {
-        if (!companies || companies.length === 0) return '';
-        
-        let html = `<div class="accordion" id="accordion-${sectionId}">`;
-        
-        companies.forEach((company, index) => {
-            const accordionItemId = `${sectionId}-${index}`;
-            const collapseId = `collapse-${accordionItemId}`;
-            
-            // Determine badge
-            const badgeInfo = getTestingBadge(company);
-            
-            // Build policy summary
-            const policies = getPolicySummary(company);
-            
-            html += `
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
-                            <div class="d-flex justify-content-between align-items-center w-100 me-3">
-                                <div>
-                                    <strong>${company.name}</strong>
-                                    <span class="badge ${badgeInfo.color} company-badge ms-2">${badgeInfo.text}</span>
-                                    ${company.industry ? `<span class="badge bg-info company-badge ms-1">${company.industry}</span>` : ''}
-                                </div>
-                                <small class="text-muted">${policies.summary}</small>
-                            </div>
-                        </button>
-                    </h2>
-                    <div id="${collapseId}" class="accordion-collapse collapse" data-bs-parent="#accordion-${sectionId}">
-                        <div class="accordion-body">
-                            ${createCompanyDetailsHTML(company, policies)}
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        
-        html += '</div>';
-        return html;
-    }
-
-    // Helper: Get testing badge
-    function getTestingBadge(company) {
-        if (!company.tests_required && !company.random_tests && 
-            !company.after_accident && !company.during_hiring) {
-            return { color: 'bg-success', text: 'No Tests' };
-        } else if (company.tests_required || company.random_tests) {
-            return { color: 'bg-danger', text: 'Regular Tests' };
-        } else if (company.during_hiring) {
-            return { color: 'bg-warning', text: 'Hiring Test' };
-        } else {
-            return { color: 'bg-secondary', text: 'Check Details' };
-        }
-    }
-
-    // Helper: Get policy summary
-    function getPolicySummary(company) {
-        const policies = [];
-        if (company.tests_required) policies.push('Testing Required');
-        if (company.random_tests) policies.push('Random Tests');
-        if (company.after_accident) policies.push('Post-Accident');
-        if (company.during_hiring) policies.push('Pre-Employment');
-        
-        const summary = policies.length > 0 ? policies.join(' • ') : 'No Testing Policy';
-        const details = policies.length > 0 ? policies.join(', ') : 'No drug testing requirements';
-        
-        return { summary, details };
-    }
-
-    // Helper: Create company details HTML
-    function createCompanyDetailsHTML(company, policies) {
-        return `
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Industry:</strong> ${company.industry || 'Not specified'}</p>
-                    ${company.description ? `<p><strong>Description:</strong> ${company.description}</p>` : ''}
-                    <p><strong>Testing Policy:</strong> ${policies.details}</p>
-                    ${company.test_type ? `<p><strong>Test Type:</strong> ${company.test_type}</p>` : ''}
-                    ${company.test_frequency ? `<p><strong>Frequency:</strong> ${company.test_frequency}</p>` : ''}
-                </div>
-                <div class="col-md-6">
-                    <h6>Testing Details:</h6>
-                    <table class="table table-sm">
-                        <tr>
-                            <td>Tests Required:</td>
-                            <td><span class="${company.tests_required ? 'test-yes' : 'test-no'}">${company.tests_required ? 'YES' : 'NO'}</span></td>
-                        </tr>
-                        <tr>
-                            <td>Random Tests:</td>
-                            <td><span class="${company.random_tests ? 'test-yes' : 'test-no'}">${company.random_tests ? 'YES' : 'NO'}</span></td>
-                        </tr>
-                        <tr>
-                            <td>After Accident:</td>
-                            <td><span class="${company.after_accident ? 'test-yes' : 'test-no'}">${company.after_accident ? 'YES' : 'NO'}</span></td>
-                        </tr>
-                        <tr>
-                            <td>During Hiring:</td>
-                            <td><span class="${company.during_hiring ? 'test-yes' : 'test-no'}">${company.during_hiring ? 'YES' : 'NO'}</span></td>
-                        </tr>
-                    </table>
-                    ${company.states && Array.isArray(company.states) && company.states.length > 0 && company.states[0] ? 
-                        `<p><strong>Operates in:</strong> ${company.states.filter(s => s).join(', ')}</p>` : ''}
-                </div>
-            </div>
-            ${company.policy_details ? `
-                <div class="mt-3 p-2 bg-light rounded">
-                    <small><strong>Additional Notes:</strong> ${company.policy_details}</small>
-                </div>
-            ` : ''}
-        `;
-    }
-
-    // Filter functions
-    function applyFilters() {
-        const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvas-menu'));
-        if (offcanvas) offcanvas.hide();
-        performSearch(1);
-    }
-
-    function resetFilters() {
-        // Reset all radio buttons to "Any"
-        const anyRadios = document.querySelectorAll('input[type="radio"][id$="_any"]');
-        anyRadios.forEach(radio => radio.checked = true);
-        
-        // Reset state filter
-        const stateSelect = document.getElementById('stateFilter');
-        if (stateSelect) stateSelect.value = '';
-        
-        performSearch(1);
-    }
-
-    function retrySearch() {
-        performSearch(currentPage);
-    }
-
-    // Event Listeners
-    document.addEventListener('DOMContentLoaded', () => {
-        // Initialize search
-        initFromURL();
-        
-        // Search button
-        if (searchButton) {
-            searchButton.addEventListener('click', () => {
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
                 performSearch(1);
-            });
-        }
-        
-        // Search input enter key
-        if (searchInput) {
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    performSearch(1);
-                }
-            });
-        }
-        
-        // Pagination buttons
-        if (prevPageBtn) {
-            prevPageBtn.addEventListener('click', () => {
-                if (currentPage > 1) {
-                    performSearch(currentPage - 1);
-                }
-            });
-        }
-        
-        if (nextPageBtn) {
-            nextPageBtn.addEventListener('click', () => {
-                if (hasNextPage) {
-                    performSearch(currentPage + 1);
-                }
-            });
-        }
-        
-        // Test API connection
-        fetch(`${API_BASE}/`)
-            .then(response => response.json())
-            .then(data => {
-                const statusElement = document.getElementById('api-status');
-                if (statusElement) {
-                    statusElement.innerHTML = 
-                        `<strong>API Connected!</strong> Ready to search ${data.message}`;
-                }
-            })
-            .catch(error => {
-                console.log('API test failed:', error);
-            });
-    });
+            }
+        });
+    }
+    
+    // Filter buttons
+    const filterBtn = document.getElementById('open-filters');
+    if (filterBtn) {
+        filterBtn.addEventListener('click', function() {
+            // Offcanvas will be opened by Bootstrap data attributes
+        });
+    }
+}
 
-    // Make functions globally available
-    window.performSearch = performSearch;
-    window.applyFilters = applyFilters;
-    window.resetFilters = resetFilters;
-    window.retrySearch = retrySearch;
-</script>
+async function performSearch(page = 1) {
+    currentPage = page;
+    currentQuery = document.getElementById('Search-Bar-1').value.trim();
+    
+    // Build URL
+    const url = new URL(`${API_BASE}/api/search`);
+    url.searchParams.append('q', currentQuery);
+    url.searchParams.append('page', page);
+    
+    // Get filter values
+    const testsFilter = document.querySelector('input[name="tests_required"]:checked');
+    const randomFilter = document.querySelector('input[name="random_tests"]:checked');
+    const accidentFilter = document.querySelector('input[name="after_accident"]:checked');
+    const hiringFilter = document.querySelector('input[name="during_hiring"]:checked');
+    const stateSelect = document.getElementById('stateFilter');
+    
+    if (testsFilter && testsFilter.id !== 'tests_any') {
+        url.searchParams.append('tests_required', testsFilter.id === 'tests_yes');
+    }
+    
+    if (randomFilter && randomFilter.id !== 'random_any') {
+        url.searchParams.append('random_tests', randomFilter.id === 'random_yes');
+    }
+    
+    if (accidentFilter && accidentFilter.id !== 'accident_any') {
+        url.searchParams.append('after_accident', accidentFilter.id === 'accident_yes');
+    }
+    
+    if (hiringFilter && hiringFilter.id !== 'hiring_any') {
+        url.searchParams.append('during_hiring', hiringFilter.id === 'hiring_yes');
+    }
+    
+    if (stateSelect && stateSelect.value) {
+        url.searchParams.append('location', stateSelect.value);
+    }
+    
+    // Show loading
+    const resultsContainer = document.getElementById('resultsContainer');
+    if (resultsContainer) {
+        resultsContainer.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+    }
+    
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        displayResults(data.results, data.grouped_results);
+        totalResults = data.total || 0;
+        hasNextPage = data.has_next || false;
+        
+        // Update URL
+        if (currentQuery) {
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('q', currentQuery);
+            window.history.pushState({}, '', newUrl);
+        }
+        
+    } catch (error) {
+        const resultsContainer = document.getElementById('resultsContainer');
+        if (resultsContainer) {
+            resultsContainer.innerHTML = `
+                <div class="alert alert-danger">
+                    Search failed. Please try again.
+                </div>
+            `;
+        }
+    }
+}
+
+function displayResults(companies, groupedResults = null) {
+    const resultsContainer = document.getElementById('resultsContainer');
+    if (!resultsContainer) return;
+    
+    if (!companies || companies.length === 0) {
+        resultsContainer.innerHTML = `
+            <div class="alert alert-info">
+                No companies found matching your criteria.
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    
+    if (groupedResults && (groupedResults.exact_matches.length > 0 || groupedResults.industry_matches.length > 0)) {
+        // Exact matches
+        if (groupedResults.exact_matches.length > 0) {
+            html += `
+                <div class="mb-4">
+                    <h5 class="text-success">Exact Matches</h5>
+                    ${createCompaniesList(groupedResults.exact_matches)}
+                </div>
+            `;
+        }
+        
+        // Industry matches
+        if (groupedResults.industry_matches.length > 0) {
+            html += `
+                <div class="mb-4">
+                    <h5 class="text-primary">Related Companies</h5>
+                    ${createCompaniesList(groupedResults.industry_matches)}
+                </div>
+            `;
+        }
+        
+        // Other matches
+        if (groupedResults.other_matches && groupedResults.other_matches.length > 0) {
+            html += `
+                <div class="mb-4">
+                    <h5 class="text-secondary">Other Companies</h5>
+                    ${createCompaniesList(groupedResults.other_matches)}
+                </div>
+            `;
+        }
+        
+    } else {
+        html = createCompaniesList(companies);
+    }
+    
+    resultsContainer.innerHTML = html;
+}
+
+function createCompaniesList(companies) {
+    return `
+        <div class="list-group">
+            ${companies.map(company => `
+                <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">${company.name}</h6>
+                        <small class="text-muted">${company.industry || ''}</small>
+                    </div>
+                    <div class="mt-2">
+                        <span class="badge ${company.tests_required ? 'bg-danger' : 'bg-success'} me-1">
+                            ${company.tests_required ? 'Tests Required' : 'No Tests'}
+                        </span>
+                        ${company.random_tests ? '<span class="badge bg-warning me-1">Random Tests</span>' : ''}
+                        ${company.during_hiring ? '<span class="badge bg-info me-1">Hiring Test</span>' : ''}
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+// Make functions available globally
+window.performSearch = performSearch;
 </body>
 </html>
