@@ -125,47 +125,36 @@
       </footer>
       <script src="assets/bootstrap/js/bootstrap.min.js"></script><script src="assets/js/script.min.js"></script>
 	  <script>
-// Function to handle search from homepage
-function getusrser() {
-    let searchTerm = document.getElementById("initSearchBar").value.trim();
-    
-    // Don't search if empty
-    if (!searchTerm) {
-        alert("Please enter a company name or industry to search");
-        return false;
+    // Fix for index.html search button
+    function getusrser() {
+        let searchTerm = document.getElementById("initSearchBar").value;
+        // Allow empty search - user can explore all companies
+        window.location.href = "search.html?q=" + encodeURIComponent(searchTerm);
     }
     
-    // Pass search term to search.html via URL parameter
-    window.location.href = "search.html?q=" + encodeURIComponent(searchTerm);
-    return false; // Prevent default link behavior
-}
-
-// Make the search button work properly
-document.addEventListener("DOMContentLoaded", function() {
-    const searchButton = document.getElementById("initSearchButton");
-    const searchInput = document.getElementById("initSearchBar");
-    
-    if (searchButton) {
-        // Update button to use the function
-        searchButton.addEventListener("click", function(e) {
-            e.preventDefault(); // Stop the default link behavior
-            getusrser();
-        });
-    }
-    
-    if (searchInput) {
-        // Make Enter key work on search bar
-        searchInput.addEventListener("keypress", function(e) {
-            if (e.key === 'Enter') {
+    // Make the button work
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchButton = document.getElementById("initSearchButton");
+        const searchInput = document.getElementById("initSearchBar");
+        
+        if (searchButton) {
+            // Remove old onclick and add proper event listener
+            searchButton.removeAttribute("onclick");
+            searchButton.addEventListener("click", function(e) {
                 e.preventDefault();
                 getusrser();
-            }
-        });
+            });
+        }
         
-        // Auto-focus the search bar when page loads
-        searchInput.focus();
-    }
-});
+        if (searchInput) {
+            searchInput.addEventListener("keypress", function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    getusrser();
+                }
+            });
+        }
+    });
 </script>
    </body>
 </html>
