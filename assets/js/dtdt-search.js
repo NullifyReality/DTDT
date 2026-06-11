@@ -101,8 +101,7 @@
     try {
       var data = await DTDT.request("/api/search/jobs", {
         method: "POST",
-        body: body,
-        auth: false
+        body: body
       });
       updateJob(data.job);
       if (currentQuery.trim()) {
@@ -135,7 +134,7 @@
 
   async function pollJob(jobId) {
     try {
-      var data = await DTDT.request("/api/search/jobs/" + encodeURIComponent(jobId), { auth: false });
+      var data = await DTDT.request("/api/search/jobs/" + encodeURIComponent(jobId));
       updateJob(data.job);
       if (data.job.state === "QUEUED" || data.job.state === "PROCESSING") {
         pollingTimer = setTimeout(function () {
