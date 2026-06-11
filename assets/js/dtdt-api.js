@@ -125,11 +125,64 @@
   function setUserSession(data) {
     if (data.accessToken) setAccessToken(data.accessToken);
     if (data.user) window.localStorage.setItem("dtdt_user", JSON.stringify(data.user));
+    updateAuthLinks();
   }
 
   function clearUserSession() {
     setAccessToken(null);
     window.localStorage.removeItem("dtdt_user");
+    updateAuthLinks();
+  }
+
+  function isLoginHref(href) {
+    return /^login\.html(?:[?#].*)?$/.test(String(href || ""));
+  }
+
+  function isSignedIn() {
+    return Boolean(getAccessToken() || currentUser());
+  }
+
+  function updateAuthLinks() {
+    var signedIn = isSignedIn();
+    Array.prototype.slice.call(document.querySelectorAll("a[href]")).forEach(function (link) {
+      var originalHref = link.dataset.authLoginHref || link.getAttribute("href");
+      if (!isLoginHref(originalHref)) return;
+
+      if (!link.dataset.authLoginHref) {
+        link.dataset.authLoginHref = originalHref;
+        link.dataset.authLoginText = link.textContent || "Login";
+      }
+
+      if (signedIn) {
+        link.setAttribute("href", "#");
+        link.textContent = "Logout";
+        link.setAttribute("aria-label", "Logout");
+        if (!link.dataset.authLogoutBound) {
+          link.dataset.authLogoutBound = "true";
+          link.addEventListener("click", handleLogoutClick);
+        }
+      } else {
+        link.setAttribute("href", link.dataset.authLoginHref);
+        link.textContent = link.dataset.authLoginText || "Login";
+        link.removeAttribute("aria-label");
+        if (link.dataset.authLogoutBound) {
+          link.removeEventListener("click", handleLogoutClick);
+          delete link.dataset.authLogoutBound;
+        }
+      }
+    });
+  }
+
+  async function handleLogoutClick(event) {
+    event.preventDefault();
+    try {
+      await request("/api/auth/logout", { method: "POST" });
+    } catch (_error) {
+      // Local session cleanup still matters if the server-side refresh token already expired.
+    } finally {
+      clearUserSession();
+      window.location.href = "index.html";
+    }
   }
 
   function escapeHtml(value) {
@@ -171,4 +224,10 @@
     formatPolicy: formatPolicy,
     showMessage: showMessage
   };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", updateAuthLinks);
+  } else {
+    updateAuthLinks();
+  }
 })();
