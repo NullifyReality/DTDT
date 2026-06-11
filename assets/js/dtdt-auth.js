@@ -8,6 +8,7 @@
     bindForm("forgotForm", handleForgot);
     bindForm("resetForm", handleReset);
     bindLogout();
+    bindResendVerification();
   });
 
   function bindForm(id, handler) {
@@ -52,7 +53,7 @@
         body: values(form),
         auth: false
       });
-      message(form, data.devCode ? "Account created. Verification code: " + data.devCode : "Account created. Check your email for a verification code.", "success");
+      message(form, data.devCode ? "Account created. Verification code: " + data.devCode : data.message || "Account created. Check your email for a verification code.", data.emailDelivery && data.emailDelivery.delivered === false ? "warning" : "success");
       var verifyEmail = document.querySelector("#verifyForm input[name='email']");
       var signupEmail = form.querySelector("input[name='email']");
       if (verifyEmail && signupEmail) verifyEmail.value = signupEmail.value;
@@ -125,6 +126,30 @@
       } finally {
         DTDT.clearUserSession();
         window.location.href = "index.html";
+      }
+    });
+  }
+
+  function bindResendVerification() {
+    var resend = document.getElementById("resendVerification");
+    var form = document.getElementById("verifyForm");
+    if (!resend || !form) return;
+    resend.addEventListener("click", async function () {
+      var emailInput = form.querySelector("input[name='email']");
+      if (!emailInput || !emailInput.value) {
+        message(form, "Enter your email first.", "warning");
+        return;
+      }
+
+      try {
+        var data = await DTDT.request("/api/auth/verification/resend", {
+          method: "POST",
+          body: { email: emailInput.value },
+          auth: false
+        });
+        message(form, data.devCode ? "Verification code: " + data.devCode : data.message || "If verification is needed, a new code was sent.", data.emailDelivery && data.emailDelivery.delivered === false ? "warning" : "success");
+      } catch (error) {
+        message(form, error.message || "Unable to resend verification code.", "danger");
       }
     });
   }
