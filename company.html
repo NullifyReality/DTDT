@@ -11,6 +11,30 @@
         .policy-label { color: #5c636a; font-size: .82rem; text-transform: uppercase; }
         .policy-value { font-weight: 700; }
         .company-logo { display: none; max-height: 82px; max-width: 180px; object-fit: contain; }
+        .company-state-panel { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 1rem; }
+        .state-map-legend { color: #5c636a; display: flex; flex-wrap: wrap; font-size: .82rem; gap: .75rem; }
+        .state-map-legend span::before { content: ""; display: inline-block; width: .75rem; height: .75rem; margin-right: .35rem; border-radius: 3px; vertical-align: -1px; }
+        .state-map-legend .has-record::before { background: #c9f2df; border: 1px solid #198754; }
+        .state-map-legend .current-record::before { background: #0d6efd; border: 1px solid #0a58ca; }
+        .state-map-legend .no-record::before { background: #eef1f4; border: 1px solid #cfd6dd; }
+        .state-tile-map { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 4px; min-height: 268px; }
+        .state-tile { align-items: center; aspect-ratio: 1; background: #eef1f4; border: 1px solid #cfd6dd; border-radius: 4px; color: #6c757d; display: inline-flex; font-size: .72rem; font-weight: 700; justify-content: center; line-height: 1; padding: 0; transition: background-color .15s ease, border-color .15s ease, color .15s ease, transform .15s ease; }
+        .state-tile:hover:not(:disabled), .state-tile:focus-visible { transform: translateY(-1px); }
+        .state-tile:disabled { cursor: default; opacity: .7; }
+        .state-tile[data-has-record="true"] { background: #c9f2df; border-color: #198754; color: #0f5132; cursor: pointer; }
+        .state-tile.is-current { box-shadow: 0 0 0 2px #0d6efd inset; }
+        .state-tile.is-selected { background: #0d6efd; border-color: #0a58ca; color: #fff; }
+        .state-response-panel { background: #fff; border: 1px solid #dee2e6; border-radius: 8px; min-height: 100%; padding: 1rem; }
+        .state-response-card { border-bottom: 1px solid #e9ecef; margin-bottom: 1rem; padding-bottom: 1rem; }
+        .state-response-card:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
+        .state-response-grid { display: grid; gap: .5rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .state-response-grid span { color: #5c636a; display: block; font-size: .75rem; text-transform: uppercase; }
+        .state-response-grid strong { color: #212529; display: block; }
+        @media (max-width: 575.98px) {
+            .state-tile-map { gap: 3px; min-height: 214px; }
+            .state-tile { font-size: .62rem; }
+            .state-response-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -54,6 +78,28 @@
                         <div class="col-md-3">
                             <div class="policy-label">Reasonable suspicion</div>
                             <div class="policy-value" id="reasonableSuspicionTesting">Unknown</div>
+                        </div>
+                    </div>
+
+                    <div class="company-state-panel mt-4">
+                        <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+                            <div>
+                                <h2 class="h5 text-dark mb-1">USA State Responses</h2>
+                                <p class="text-muted small mb-0" id="stateMapSummary">Loading state responses...</p>
+                            </div>
+                            <div class="state-map-legend" aria-hidden="true">
+                                <span class="has-record">Record</span>
+                                <span class="current-record">Current</span>
+                                <span class="no-record">No record</span>
+                            </div>
+                        </div>
+                        <div class="row g-4 mt-2">
+                            <div class="col-lg-7">
+                                <div id="stateMap" class="state-tile-map" role="list" aria-label="USA state response map"></div>
+                            </div>
+                            <div class="col-lg-5">
+                                <div id="stateResponsePanel" class="state-response-panel" aria-live="polite"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -146,6 +192,6 @@
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>
     <script src="assets/js/script.min.js"></script>
     <script src="assets/js/dtdt-api.js"></script>
-    <script src="assets/js/dtdt-company.js"></script>
+    <script src="assets/js/dtdt-company.js?v=20260611-state-map1"></script>
 </body>
 </html>
