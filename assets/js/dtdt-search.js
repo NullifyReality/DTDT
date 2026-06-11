@@ -166,8 +166,9 @@
     setLoading(false);
 
     if (job.state === "RATE_LIMITED") {
-      setQueueState("Rate Limited", job.error || "You have reached your search limit. Contact the site administrator for additional searches.");
-      showError(job.error || "You have reached your search limit. Contact the site administrator for additional searches.");
+      var message = rateLimitMessage(job);
+      setQueueState("Rate Limited", message);
+      showRateLimitError(message);
       return;
     }
 
@@ -302,6 +303,40 @@
     error.className = "alert alert-danger";
     error.textContent = message;
     container.appendChild(error);
+  }
+
+  function isSignedIn() {
+    return Boolean(DTDT.getAccessToken && DTDT.getAccessToken());
+  }
+
+  function rateLimitMessage(job) {
+    var fallback = isSignedIn()
+      ? "You have reached your account search limit. Contact the site administrator for additional searches."
+      : "You've reached the guest search limit. Create a free account to keep searching.";
+    var message = job.error || fallback;
+    if (!isSignedIn() && /contact the site administrator/i.test(message)) {
+      return fallback;
+    }
+    return message;
+  }
+
+  function showRateLimitError(message) {
+    var container = document.getElementById("resultsContainer");
+    if (!container) return;
+    container.textContent = "";
+
+    var error = document.createElement("div");
+    error.className = "alert alert-warning";
+    error.textContent = message;
+    container.appendChild(error);
+
+    if (!isSignedIn()) {
+      var action = document.createElement("a");
+      action.className = "btn btn-primary";
+      action.href = "signup.html";
+      action.textContent = "Create an account";
+      container.appendChild(action);
+    }
   }
 
   window.performSearch = performSearch;
