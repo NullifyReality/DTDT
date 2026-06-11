@@ -13,8 +13,8 @@
     currentQuery = query;
 
     bindEvents();
-    if (query.trim()) {
-      performSearch(1);
+    if (query.trim() || params.has("q")) {
+      performSearch(1, { allowBlank: true });
     } else {
       showIdle();
     }
@@ -28,7 +28,7 @@
 
     if (searchButton) {
       searchButton.addEventListener("click", function () {
-        performSearch(1);
+        performSearch(1, { allowBlank: true });
       });
     }
 
@@ -36,20 +36,20 @@
       searchInput.addEventListener("keydown", function (event) {
         if (event.key === "Enter") {
           event.preventDefault();
-          performSearch(1);
+          performSearch(1, { allowBlank: true });
         }
       });
     }
 
     if (previous) {
       previous.addEventListener("click", function () {
-        if (currentPage > 1) performSearch(currentPage - 1);
+        if (currentPage > 1) performSearch(currentPage - 1, { allowBlank: true });
       });
     }
 
     if (next) {
       next.addEventListener("click", function () {
-        performSearch(currentPage + 1);
+        performSearch(currentPage + 1, { allowBlank: true });
       });
     }
   }
@@ -81,13 +81,14 @@
     };
   }
 
-  async function performSearch(page) {
+  async function performSearch(page, options) {
+    options = options || {};
     currentPage = page;
     currentQuery = (document.getElementById("Search-Bar-1") || {}).value || "";
     clearTimeout(pollingTimer);
 
     var body = buildSearchBody(page);
-    if (!hasActiveCriteria(body)) {
+    if (!hasActiveCriteria(body) && !options.allowBlank) {
       showIdle();
       var idleUrl = new URL(window.location.href);
       idleUrl.searchParams.delete("q");
@@ -108,6 +109,10 @@
         var nextUrl = new URL(window.location.href);
         nextUrl.searchParams.set("q", currentQuery.trim());
         window.history.replaceState({}, "", nextUrl);
+      } else if (!hasActiveCriteria(body)) {
+        var randomUrl = new URL(window.location.href);
+        randomUrl.searchParams.set("q", "");
+        window.history.replaceState({}, "", randomUrl);
       }
       if (data.job.state === "QUEUED" || data.job.state === "PROCESSING") {
         pollJob(data.job.id);
@@ -177,7 +182,7 @@
       return;
     }
 
-    setQueueState("Completed", "Search completed.");
+    setQueueState("Completed", job.results && job.results.random ? "Showing random companies." : "Search completed.");
     displayResults(job.results || { results: [], total: 0, page: currentPage, hasNext: false });
   }
 
@@ -196,8 +201,8 @@
 
     var results = data.results || [];
     if (info) info.style.display = "block";
-    if (count) count.textContent = String(data.total || results.length || 0);
-    if (pageInfo) pageInfo.textContent = "Page " + (data.page || currentPage);
+    if (count) count.textContent = data.random ? String(results.length || 0) + " random" : String(data.total || results.length || 0);
+    if (pageInfo) pageInfo.textContent = data.random ? "Random picks" : "Page " + (data.page || currentPage);
 
     if (!results.length) {
       var empty = document.createElement("div");
@@ -208,6 +213,11 @@
       results.forEach(function (company) {
         container.appendChild(companyCard(company));
       });
+    }
+
+    if (data.random) {
+      if (pagination) pagination.style.display = "none";
+      return;
     }
 
     if (pagination) pagination.style.display = "block";
@@ -290,7 +300,7 @@
     container.textContent = "";
     var empty = document.createElement("div");
     empty.className = "alert alert-info";
-    empty.textContent = "Search for a company to see drug-testing policy records.";
+    empty.textContent = "Search for a company, or press Search with an empty box to see random company records.";
     container.appendChild(empty);
   }
 
@@ -340,7 +350,7 @@
 
   window.performSearch = performSearch;
   window.applyFilters = function applyFilters() {
-    performSearch(1);
+    performSearch(1, { allowBlank: true });
     var menu = document.getElementById("offcanvas-menu");
     if (menu && window.bootstrap) {
       bootstrap.Offcanvas.getOrCreateInstance(menu).hide();
@@ -355,6 +365,6 @@
     });
     var thc = document.getElementById("thcFriendly");
     if (thc) thc.checked = false;
-    performSearch(1);
+    performSearch(1, { allowBlank: true });
   };
 })();
