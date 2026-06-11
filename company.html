@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html data-bs-theme="light" lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Company - Do They Drug Test?</title>
+    <link rel="icon" type="image/png" href="assets/img/tubeular.png">
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/styles.min.css">
+    <style>
+        .policy-label { color: #5c636a; font-size: .82rem; text-transform: uppercase; }
+        .policy-value { font-weight: 700; }
+        .company-logo { display: none; max-height: 82px; max-width: 180px; object-fit: contain; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-md fixed-top mb-0 pb-0" id="mainNav">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">Do They Drug Test?</a>
+            <div class="ms-auto">
+                <a class="nav-link d-inline-block text-light" href="search.html">Search</a>
+                <a class="nav-link d-inline-block text-light" href="submit.html">Submit Info</a>
+                <a class="nav-link d-inline-block text-light" href="login.html">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="py-5" style="min-height: 100vh; background: #080808;">
+        <div class="container py-5" id="companyPage">
+            <div class="card mt-5">
+                <div class="card-body p-4 p-sm-5">
+                    <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+                        <div>
+                            <h1 class="text-dark mb-1" id="companyName">Loading...</h1>
+                            <p class="text-muted mb-2" id="companyIndustry"></p>
+                            <a id="companyWebsite" href="#" target="_blank" rel="noopener" style="display: none;"></a>
+                        </div>
+                        <img class="company-logo" id="companyLogo" alt="">
+                    </div>
+
+                    <div class="row g-3 mt-4">
+                        <div class="col-md-3">
+                            <div class="policy-label">Pre-employment</div>
+                            <div class="policy-value" id="preEmploymentTesting">Unknown</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="policy-label">Random</div>
+                            <div class="policy-value" id="randomTesting">Unknown</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="policy-label">Post-accident</div>
+                            <div class="policy-value" id="postAccidentTesting">Unknown</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="policy-label">Reasonable suspicion</div>
+                            <div class="policy-value" id="reasonableSuspicionTesting">Unknown</div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="row g-4">
+                        <div class="col-lg-8">
+                            <h2 class="h5 text-dark">THC Policy</h2>
+                            <p id="thcPolicy"></p>
+                            <h2 class="h5 text-dark">Remote Worker Policy</h2>
+                            <p id="remoteWorkerPolicy"></p>
+                            <h2 class="h5 text-dark">Additional Notes</h2>
+                            <p id="additionalNotes"></p>
+                            <p class="text-muted">Last updated: <span id="companyUpdated">Unknown</span> | Pending suggestions: <span id="pendingSuggestions">0</span></p>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="border rounded p-3">
+                                <h2 class="h5 text-dark">Community Score</h2>
+                                <p><strong id="upvotes">0</strong> upvotes | <strong id="downvotes">0</strong> downvotes</p>
+                                <button class="btn btn-success me-2" type="button" data-vote="UP">Upvote</button>
+                                <button class="btn btn-outline-danger" type="button" data-vote="DOWN">Downvote</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mt-2">
+                <div class="col-lg-7">
+                    <div class="card">
+                        <div class="card-body p-4">
+                            <h2 class="h4 text-dark">Discussion</h2>
+                            <div id="comments" class="mb-4">Loading comments...</div>
+                            <form id="commentForm">
+                                <div class="alert form-message" style="display: none;"></div>
+                                <label class="form-label" for="commentBody">Share an experience or comment</label>
+                                <textarea class="form-control" id="commentBody" name="body" rows="4" required></textarea>
+                                <button class="btn btn-primary mt-3" type="submit">Comment</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="card mb-4">
+                        <div class="card-body p-4">
+                            <h2 class="h4 text-dark">Suggest a Correction</h2>
+                            <form id="suggestionForm">
+                                <div class="alert form-message" style="display: none;"></div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="suggestPre">Pre-employment testing</label>
+                                    <select class="form-select" id="suggestPre" name="preEmploymentTesting">
+                                        <option value="">No change</option>
+                                        <option value="NO">No</option>
+                                        <option value="YES">Yes</option>
+                                        <option value="SOMETIMES">Sometimes</option>
+                                        <option value="UNKNOWN">Unknown</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="suggestThc">THC policy</label>
+                                    <textarea class="form-control" id="suggestThc" name="thcPolicy" rows="3"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="suggestNotes">Notes</label>
+                                    <textarea class="form-control" id="suggestNotes" name="additionalNotes" rows="3"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="suggestNote">Message to moderators</label>
+                                    <textarea class="form-control" id="suggestNote" name="note" rows="3"></textarea>
+                                </div>
+                                <button class="btn btn-primary w-100" type="submit">Send Suggestion</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body p-4">
+                            <h2 class="h4 text-dark">Upload Logo</h2>
+                            <form id="logoForm">
+                                <div class="alert form-message" style="display: none;"></div>
+                                <input class="form-control" type="file" name="logo" accept="image/*" required>
+                                <button class="btn btn-primary w-100 mt-3" type="submit">Upload for Review</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="assets/js/script.min.js"></script>
+    <script src="assets/js/dtdt-api.js"></script>
+    <script src="assets/js/dtdt-company.js"></script>
+</body>
+</html>

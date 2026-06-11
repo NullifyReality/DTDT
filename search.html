@@ -14,14 +14,20 @@
     <link rel="stylesheet" href="assets/css/styles.min.css">
     <link rel="stylesheet" href="assets/css/animate.min.min.css">
     <style>
-        .company-badge {
-            font-size: 0.8em;
-            padding: 3px 8px;
-            margin-left: 10px;
+        .queue-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 8px;
+            color: #fff;
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            text-align: left;
         }
-        .test-yes { color: #d9534f; font-weight: bold; }
-        .test-no { color: #5cb85c; font-weight: bold; }
-        .test-sometimes { color: #f0ad4e; font-weight: bold; }
+        .queue-state {
+            color: rgb(101, 225, 173);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
         .loading-spinner {
             display: none;
             border: 4px solid #f3f3f3;
@@ -29,22 +35,44 @@
             border-radius: 50%;
             width: 40px;
             height: 40px;
-            animation: spin 2s linear infinite;
+            animation: spin 1s linear infinite;
             margin: 20px auto;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .page-btn {
-            margin: 0 5px;
-            padding: 5px 15px;
-        }
         .results-info {
             margin: 15px 0;
             padding: 10px;
             background: #f8f9fa;
             border-radius: 5px;
+        }
+        .company-result {
+            text-align: left;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .company-title {
+            color: #005f5f;
+            font-size: 1.05rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+        .company-title:hover {
+            text-decoration: underline;
+        }
+        .company-meta {
+            color: #5c636a;
+            font-size: 0.86rem;
+            margin: 10px 0 0;
+        }
+        .policy-badges .badge {
+            margin-bottom: 6px;
+        }
+        .page-btn {
+            margin: 0 5px;
+            padding: 5px 15px;
         }
     </style>
 </head>
@@ -60,52 +88,52 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarResponsive">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item nav-link"></li>
-                    <li class="nav-item nav-link"><a class="nav-link" href="/donations.html" style="color: var(--bs-light);">support the cause &lt;3</a></li>
+                    <li class="nav-item nav-link"><a class="nav-link" href="submit.html" style="color: var(--bs-light);">Submit Info</a></li>
+                    <li class="nav-item nav-link"><a class="nav-link" href="login.html" style="color: var(--bs-light);">Login</a></li>
+                    <li class="nav-item nav-link"><a class="nav-link" href="donations.html" style="color: var(--bs-light);">Support the cause &lt;3</a></li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <section class="text-center content-section" id="search" style="background: #080808; padding: 100px 0px 20px;">
+    <section class="text-center content-section" id="search" style="background: #080808; min-height: calc(100vh - 121px); padding: 100px 0px 20px;">
         <div class="container">
-            <!-- Remove the warning alert since site is now working -->
             <div class="alert alert-info beautiful" role="alert" id="api-status">
-                <strong>Live Search Active!</strong> Database updated daily with new companies.
+                <strong>Live Search Active!</strong> Database updates are moderated before becoming public.
             </div>
 
             <section class="mt-4 pt-0 py-5">
                 <div class="row">
                     <div class="col-md-8 offset-md-2">
-                        <input class="form-control-lg mb-3" type="search" id="Search-Bar-1" placeholder="Search company names or industries..." autofocus style="background: rgba(163,163,163,0.96); border-radius: 14px; border: 3px solid var(--bs-black); text-align: center;">
-                        
+                        <input class="form-control-lg mb-3 w-100" type="search" id="Search-Bar-1" placeholder="Search company names or industries..." autofocus style="background: rgba(163,163,163,0.96); border-radius: 14px; border: 3px solid var(--bs-black); text-align: center;">
+
                         <div class="d-flex justify-content-center mb-4">
                             <button class="btn btn-primary me-2" id="open-filters" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvas-menu" style="border-radius: 4px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-funnel" viewBox="0 0 16 16">
                                     <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2zm1 .5v1.308l4.372 4.858A.5.5 0 0 1 7 8.5v5.306l2-.666V8.5a.5.5 0 0 1 .128-.334L13.5 3.308V2h-11z"/>
-                                </svg> Filters
+                                </svg>
+                                Filters
                             </button>
-                            <button class="btn btn-success ms-2" id="StartSearch" type="button" style="font-size: 18px; border-radius: 4px;">
-                                Search
-                            </button>
+                            <button class="btn btn-success ms-2" id="StartSearch" type="button" style="font-size: 18px; border-radius: 4px;">Search</button>
                         </div>
 
-                        <!-- Loading Spinner -->
+                        <div class="queue-card" aria-live="polite">
+                            <div class="queue-state" id="queueState">Queued</div>
+                            <div id="queueDetail">Preparing search.</div>
+                        </div>
+
                         <div class="loading-spinner" id="loadingSpinner"></div>
 
-                        <!-- Results Info -->
                         <div class="results-info" id="resultsInfo" style="display: none;">
                             Found <span id="resultsCount">0</span> companies
                             <span id="pageInfo" class="float-end">Page 1</span>
                         </div>
 
-                        <!-- Results Container -->
-                        <div id="resultsContainer"></div>
+                        <div id="resultsContainer" class="list-group"></div>
 
-                        <!-- Pagination -->
                         <div class="mt-4" id="pagination" style="display: none;">
                             <button class="btn btn-outline-primary page-btn" id="prevPage" disabled>Previous</button>
-                            <span class="mx-3">Page <span id="currentPage">1</span></span>
+                            <span class="mx-3 text-light">Page <span id="currentPage">1</span></span>
                             <button class="btn btn-outline-primary page-btn" id="nextPage" disabled>Next</button>
                         </div>
                     </div>
@@ -114,94 +142,100 @@
         </div>
     </section>
 
-    <!-- Filters Offcanvas -->
     <div class="offcanvas offcanvas-start bg-body" tabindex="-1" id="offcanvas-menu" aria-labelledby="offcanvasMenuLabel">
         <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="offcanvasMenuLabel">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-funnel-fill me-2" viewBox="0 0 16 16">
-                    <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/>
-                </svg>
-                Search Filters
-            </h5>
+            <h5 class="offcanvas-title" id="offcanvasMenuLabel">Search Filters</h5>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
             <div class="mb-3">
-                <label class="form-label"><strong>Do they test?</strong></label>
-                <div class="btn-group w-100" role="group">
-                    <input type="radio" class="btn-check" name="tests_required" id="tests_no" autocomplete="off" checked>
-                    <label class="btn btn-outline-primary" for="tests_no">No</label>
-                    
-                    <input type="radio" class="btn-check" name="tests_required" id="tests_yes" autocomplete="off">
-                    <label class="btn btn-outline-primary" for="tests_yes">Yes</label>
-                    
-                    <input type="radio" class="btn-check" name="tests_required" id="tests_any" autocomplete="off">
-                    <label class="btn btn-outline-primary" for="tests_any">Any</label>
-                </div>
+                <label class="form-label"><strong>Company name or industry</strong></label>
+                <input class="form-control" id="industryFilter" type="text" placeholder="Industry">
             </div>
 
             <div class="mb-3">
-                <label class="form-label"><strong>Random tests?</strong></label>
-                <div class="btn-group w-100" role="group">
-                    <input type="radio" class="btn-check" name="random_tests" id="random_no" autocomplete="off" checked>
-                    <label class="btn btn-outline-primary" for="random_no">No</label>
-                    
-                    <input type="radio" class="btn-check" name="random_tests" id="random_yes" autocomplete="off">
-                    <label class="btn btn-outline-primary" for="random_yes">Yes</label>
-                    
-                    <input type="radio" class="btn-check" name="random_tests" id="random_any" autocomplete="off">
-                    <label class="btn btn-outline-primary" for="random_any">Any</label>
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label"><strong>After accident?</strong></label>
-                <div class="btn-group w-100" role="group">
-                    <input type="radio" class="btn-check" name="after_accident" id="accident_no" autocomplete="off" checked>
-                    <label class="btn btn-outline-primary" for="accident_no">No</label>
-                    
-                    <input type="radio" class="btn-check" name="after_accident" id="accident_yes" autocomplete="off">
-                    <label class="btn btn-outline-primary" for="accident_yes">Yes</label>
-                    
-                    <input type="radio" class="btn-check" name="after_accident" id="accident_any" autocomplete="off">
-                    <label class="btn btn-outline-primary" for="accident_any">Any</label>
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label"><strong>During hiring?</strong></label>
-                <div class="btn-group w-100" role="group">
-                    <input type="radio" class="btn-check" name="during_hiring" id="hiring_no" autocomplete="off" checked>
-                    <label class="btn btn-outline-primary" for="hiring_no">No</label>
-                    
-                    <input type="radio" class="btn-check" name="during_hiring" id="hiring_yes" autocomplete="off">
-                    <label class="btn btn-outline-primary" for="hiring_yes">Yes</label>
-                    
-                    <input type="radio" class="btn-check" name="during_hiring" id="hiring_any" autocomplete="off">
-                    <label class="btn btn btn-outline-primary" for="hiring_any">Any</label>
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label"><strong>Filter by state</strong></label>
+                <label class="form-label"><strong>State</strong></label>
                 <select class="form-select" id="stateFilter">
                     <option value="">All States</option>
-                    <option value="CA">California</option>
-                    <option value="TX">Texas</option>
-                    <option value="NY">New York</option>
-                    <option value="FL">Florida</option>
-                    <option value="WA">Washington</option>
-                    <option value="IL">Illinois</option>
-                    <option value="GA">Georgia</option>
-                    <option value="NC">North Carolina</option>
-                    <option value="MA">Massachusetts</option>
-                    <option value="CO">Colorado</option>
+                    <option value="AL">Alabama</option>
+                    <option value="AK">Alaska</option>
                     <option value="AZ">Arizona</option>
+                    <option value="AR">Arkansas</option>
+                    <option value="CA">California</option>
+                    <option value="CO">Colorado</option>
+                    <option value="CT">Connecticut</option>
+                    <option value="DE">Delaware</option>
+                    <option value="FL">Florida</option>
+                    <option value="GA">Georgia</option>
+                    <option value="IL">Illinois</option>
+                    <option value="MA">Massachusetts</option>
+                    <option value="MI">Michigan</option>
+                    <option value="NC">North Carolina</option>
                     <option value="NV">Nevada</option>
+                    <option value="NY">New York</option>
                     <option value="OH">Ohio</option>
                     <option value="PA">Pennsylvania</option>
-                    <option value="MI">Michigan</option>
+                    <option value="TX">Texas</option>
+                    <option value="WA">Washington</option>
                 </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label"><strong>Pre-employment testing</strong></label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="preEmploymentTesting" id="pre_any" value="any" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary" for="pre_any">Any</label>
+                    <input type="radio" class="btn-check" name="preEmploymentTesting" id="pre_no" value="NO" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="pre_no">No</label>
+                    <input type="radio" class="btn-check" name="preEmploymentTesting" id="pre_yes" value="YES" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="pre_yes">Yes</label>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label"><strong>Random testing</strong></label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="randomTesting" id="random_any" value="any" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary" for="random_any">Any</label>
+                    <input type="radio" class="btn-check" name="randomTesting" id="random_no" value="NO" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="random_no">No</label>
+                    <input type="radio" class="btn-check" name="randomTesting" id="random_yes" value="YES" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="random_yes">Yes</label>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label"><strong>Post-accident testing</strong></label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="postAccidentTesting" id="post_any" value="any" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary" for="post_any">Any</label>
+                    <input type="radio" class="btn-check" name="postAccidentTesting" id="post_no" value="NO" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="post_no">No</label>
+                    <input type="radio" class="btn-check" name="postAccidentTesting" id="post_yes" value="YES" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="post_yes">Yes</label>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label"><strong>Reasonable suspicion testing</strong></label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="reasonableSuspicionTesting" id="suspicion_any" value="any" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary" for="suspicion_any">Any</label>
+                    <input type="radio" class="btn-check" name="reasonableSuspicionTesting" id="suspicion_no" value="NO" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="suspicion_no">No</label>
+                    <input type="radio" class="btn-check" name="reasonableSuspicionTesting" id="suspicion_yes" value="YES" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="suspicion_yes">Yes</label>
+                </div>
+            </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="thcFriendly">
+                <label class="form-check-label" for="thcFriendly">THC friendly policy</label>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label"><strong>Remote worker policy</strong></label>
+                <input class="form-control" id="remotePolicyFilter" type="text" placeholder="Remote, hybrid, unknown">
             </div>
 
             <div class="mt-4">
@@ -213,220 +247,13 @@
 
     <footer>
         <div class="container text-center">
-            <p>Copyright © Do They Drug Test? 2025</p>
+            <p>Copyright &copy; Do They Drug Test? 2025</p>
         </div>
     </footer>
 
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>
     <script src="assets/js/script.min.js"></script>
-    <script>
-    // API Configuration
-const API_BASE = window.location.hostname === 'localhost' 
-    ? 'http://localhost:8000' 
-    : 'https://api.dotheydrugtest.com';
-
-// State
-let currentPage = 1;
-let currentQuery = '';
-let totalResults = 0;
-let hasNextPage = false;
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    // Get URL parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const query = urlParams.get('q');
-    
-    if (query !== null) {
-        document.getElementById('Search-Bar-1').value = query;
-        currentQuery = query;
-        performSearch(1);
-    } else {
-        performSearch(1);
-    }
-    
-    // Setup event listeners
-    setupEventListeners();
-});
-
-function setupEventListeners() {
-    // Search button
-    const searchBtn = document.getElementById('StartSearch');
-    if (searchBtn) {
-        searchBtn.addEventListener('click', function() {
-            performSearch(1);
-        });
-    }
-    
-    // Search input enter key
-    const searchInput = document.getElementById('Search-Bar-1');
-    if (searchInput) {
-        searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                performSearch(1);
-            }
-        });
-    }
-    
-    // Filter buttons
-    const filterBtn = document.getElementById('open-filters');
-    if (filterBtn) {
-        filterBtn.addEventListener('click', function() {
-            // Offcanvas will be opened by Bootstrap data attributes
-        });
-    }
-}
-
-async function performSearch(page = 1) {
-    currentPage = page;
-    currentQuery = document.getElementById('Search-Bar-1').value.trim();
-    
-    // Build URL
-    const url = new URL(`${API_BASE}/api/search`);
-    url.searchParams.append('q', currentQuery);
-    url.searchParams.append('page', page);
-    
-    // Get filter values
-    const testsFilter = document.querySelector('input[name="tests_required"]:checked');
-    const randomFilter = document.querySelector('input[name="random_tests"]:checked');
-    const accidentFilter = document.querySelector('input[name="after_accident"]:checked');
-    const hiringFilter = document.querySelector('input[name="during_hiring"]:checked');
-    const stateSelect = document.getElementById('stateFilter');
-    
-    if (testsFilter && testsFilter.id !== 'tests_any') {
-        url.searchParams.append('tests_required', testsFilter.id === 'tests_yes');
-    }
-    
-    if (randomFilter && randomFilter.id !== 'random_any') {
-        url.searchParams.append('random_tests', randomFilter.id === 'random_yes');
-    }
-    
-    if (accidentFilter && accidentFilter.id !== 'accident_any') {
-        url.searchParams.append('after_accident', accidentFilter.id === 'accident_yes');
-    }
-    
-    if (hiringFilter && hiringFilter.id !== 'hiring_any') {
-        url.searchParams.append('during_hiring', hiringFilter.id === 'hiring_yes');
-    }
-    
-    if (stateSelect && stateSelect.value) {
-        url.searchParams.append('location', stateSelect.value);
-    }
-    
-    // Show loading
-    const resultsContainer = document.getElementById('resultsContainer');
-    if (resultsContainer) {
-        resultsContainer.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
-    }
-    
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        if (data.error) {
-            throw new Error(data.error);
-        }
-        
-        displayResults(data.results, data.grouped_results);
-        totalResults = data.total || 0;
-        hasNextPage = data.has_next || false;
-        
-        // Update URL
-        if (currentQuery) {
-            const newUrl = new URL(window.location);
-            newUrl.searchParams.set('q', currentQuery);
-            window.history.pushState({}, '', newUrl);
-        }
-        
-    } catch (error) {
-        const resultsContainer = document.getElementById('resultsContainer');
-        if (resultsContainer) {
-            resultsContainer.innerHTML = `
-                <div class="alert alert-danger">
-                    Search failed. Please try again.
-                </div>
-            `;
-        }
-    }
-}
-
-function displayResults(companies, groupedResults = null) {
-    const resultsContainer = document.getElementById('resultsContainer');
-    if (!resultsContainer) return;
-    
-    if (!companies || companies.length === 0) {
-        resultsContainer.innerHTML = `
-            <div class="alert alert-info">
-                No companies found matching your criteria.
-            </div>
-        `;
-        return;
-    }
-    
-    let html = '';
-    
-    if (groupedResults && (groupedResults.exact_matches.length > 0 || groupedResults.industry_matches.length > 0)) {
-        // Exact matches
-        if (groupedResults.exact_matches.length > 0) {
-            html += `
-                <div class="mb-4">
-                    <h5 class="text-success">Exact Matches</h5>
-                    ${createCompaniesList(groupedResults.exact_matches)}
-                </div>
-            `;
-        }
-        
-        // Industry matches
-        if (groupedResults.industry_matches.length > 0) {
-            html += `
-                <div class="mb-4">
-                    <h5 class="text-primary">Related Companies</h5>
-                    ${createCompaniesList(groupedResults.industry_matches)}
-                </div>
-            `;
-        }
-        
-        // Other matches
-        if (groupedResults.other_matches && groupedResults.other_matches.length > 0) {
-            html += `
-                <div class="mb-4">
-                    <h5 class="text-secondary">Other Companies</h5>
-                    ${createCompaniesList(groupedResults.other_matches)}
-                </div>
-            `;
-        }
-        
-    } else {
-        html = createCompaniesList(companies);
-    }
-    
-    resultsContainer.innerHTML = html;
-}
-
-function createCompaniesList(companies) {
-    return `
-        <div class="list-group">
-            ${companies.map(company => `
-                <div class="list-group-item">
-                    <div class="d-flex w-100 justify-content-between">
-                        <h6 class="mb-1">${company.name}</h6>
-                        <small class="text-muted">${company.industry || ''}</small>
-                    </div>
-                    <div class="mt-2">
-                        <span class="badge ${company.tests_required ? 'bg-danger' : 'bg-success'} me-1">
-                            ${company.tests_required ? 'Tests Required' : 'No Tests'}
-                        </span>
-                        ${company.random_tests ? '<span class="badge bg-warning me-1">Random Tests</span>' : ''}
-                        ${company.during_hiring ? '<span class="badge bg-info me-1">Hiring Test</span>' : ''}
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-    `;
-}
-
-// Make functions available globally
-window.performSearch = performSearch;
-    </script>
+    <script src="assets/js/dtdt-api.js"></script>
+    <script src="assets/js/dtdt-search.js"></script>
 </body>
 </html>
