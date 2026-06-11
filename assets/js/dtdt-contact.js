@@ -15,7 +15,14 @@
           body: body,
           auth: false
         });
-        DTDT.showMessage(message, data.message || "Thanks. Your message was received.", "success");
+        var delivered = !data.emailDelivery || data.emailDelivery.delivered !== false;
+        DTDT.showMessage(
+          message,
+          delivered
+            ? data.message || "Thanks. Your message was received."
+            : "Your message was saved, but the email notification could not be sent. We can still review it in moderation.",
+          delivered ? "success" : "warning"
+        );
         form.reset();
         if (DTDT.resetTurnstile) DTDT.resetTurnstile(form);
       } catch (error) {
