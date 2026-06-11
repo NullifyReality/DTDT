@@ -13,7 +13,11 @@
     currentQuery = query;
 
     bindEvents();
-    performSearch(1);
+    if (query.trim()) {
+      performSearch(1);
+    } else {
+      showIdle();
+    }
   });
 
   function bindEvents() {
@@ -81,13 +85,23 @@
     currentPage = page;
     currentQuery = (document.getElementById("Search-Bar-1") || {}).value || "";
     clearTimeout(pollingTimer);
+
+    var body = buildSearchBody(page);
+    if (!hasActiveCriteria(body)) {
+      showIdle();
+      var idleUrl = new URL(window.location.href);
+      idleUrl.searchParams.delete("q");
+      window.history.replaceState({}, "", idleUrl);
+      return;
+    }
+
     setLoading(true);
     setQueueState("Queued", "Your search is entering the queue.");
 
     try {
       var data = await DTDT.request("/api/search/jobs", {
         method: "POST",
-        body: buildSearchBody(page),
+        body: body,
         auth: false
       });
       updateJob(data.job);
@@ -103,6 +117,20 @@
       setLoading(false);
       showError(error.message || "Search failed. Please try again.");
     }
+  }
+
+  function hasActiveCriteria(body) {
+    return Boolean(
+      (body.q && body.q.trim()) ||
+        body.state ||
+        body.industry ||
+        body.preEmploymentTesting ||
+        body.randomTesting ||
+        body.postAccidentTesting ||
+        body.reasonableSuspicionTesting ||
+        body.thcFriendly ||
+        body.remotePolicy
+    );
   }
 
   async function pollJob(jobId) {
@@ -245,6 +273,25 @@
     var description = document.getElementById("queueDetail");
     if (label) label.textContent = state;
     if (description) description.textContent = detail || "";
+  }
+
+  function showIdle() {
+    setLoading(false);
+    setQueueState("Ready", "Enter a company name or choose filters to search.");
+
+    var container = document.getElementById("resultsContainer");
+    var info = document.getElementById("resultsInfo");
+    var pagination = document.getElementById("pagination");
+
+    if (info) info.style.display = "none";
+    if (pagination) pagination.style.display = "none";
+    if (!container) return;
+
+    container.textContent = "";
+    var empty = document.createElement("div");
+    empty.className = "alert alert-info";
+    empty.textContent = "Search for a company to see drug-testing policy records.";
+    container.appendChild(empty);
   }
 
   function showError(message) {

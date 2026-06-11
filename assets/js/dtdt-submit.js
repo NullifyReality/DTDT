@@ -5,6 +5,11 @@
     var form = document.getElementById("submissionForm");
     if (!form) return;
 
+    form.style.display = "none";
+    requireLogin(form).then(function (allowed) {
+      if (allowed) form.style.display = "";
+    });
+
     form.addEventListener("submit", async function (event) {
       event.preventDefault();
       var message = form.querySelector(".form-message");
@@ -42,4 +47,33 @@
       }
     });
   });
+
+  async function requireLogin(form) {
+    var message = form.querySelector(".form-message");
+    try {
+      if (!DTDT.getAccessToken()) {
+        await DTDT.refreshSession();
+      }
+      await DTDT.request("/api/auth/me");
+      return true;
+    } catch (_error) {
+      DTDT.clearUserSession();
+      showLoginRequired(form, message);
+      return false;
+    }
+  }
+
+  function showLoginRequired(form, message) {
+    var redirect = encodeURIComponent(window.location.pathname.split("/").pop() || "submit.html");
+    if (message) message.style.display = "none";
+    var alert = document.createElement("div");
+    alert.className = "alert alert-warning";
+    alert.textContent = "Please log in before submitting company information.";
+    var link = document.createElement("a");
+    link.className = "btn btn-primary w-100 mt-3";
+    link.href = "login.html?redirect=" + redirect;
+    link.textContent = "Log in to submit";
+    form.parentNode.insertBefore(alert, form);
+    form.parentNode.insertBefore(link, form.nextSibling);
+  }
 })();

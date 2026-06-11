@@ -38,7 +38,7 @@
       DTDT.setUserSession(data);
       message(form, "Logged in. Redirecting...", "success");
       window.setTimeout(function () {
-        window.location.href = "search.html";
+        window.location.href = safeRedirect("search.html");
       }, 500);
     } catch (error) {
       message(form, error.message, "danger");
@@ -127,6 +127,15 @@
         window.location.href = "index.html";
       }
     });
+  }
+
+  function safeRedirect(fallback) {
+    var params = new URLSearchParams(window.location.search);
+    var redirect = params.get("redirect");
+    if (!redirect) return fallback;
+    if (/^https?:\/\//i.test(redirect) || redirect.indexOf("//") === 0) return fallback;
+    if (!/^[A-Za-z0-9._~/?#=&%-]+$/.test(redirect)) return fallback;
+    return redirect;
   }
 
   function prefillResetFromQuery() {
