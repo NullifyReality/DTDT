@@ -45,8 +45,25 @@
         .results-info {
             margin: 15px 0;
             padding: 10px;
-            background: #f8f9fa;
+            background: #fff;
+            border: 1px solid rgba(101, 225, 173, 0.45);
             border-radius: 5px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.24);
+            color: #172126;
+            font-weight: 700;
+            line-height: 1.35;
+            text-align: left;
+        }
+        .results-info #resultsCount,
+        .results-info #pageInfo {
+            color: #005f5f;
+        }
+        @media (max-width: 575.98px) {
+            .results-info #pageInfo {
+                display: block;
+                float: none !important;
+                margin-top: 4px;
+            }
         }
         .company-result {
             text-align: left;
