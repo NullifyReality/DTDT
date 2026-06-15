@@ -36,7 +36,6 @@
           method: "POST",
           body: {
             type: data.type,
-            companyId: data.companyId || undefined,
             payload: payload,
             note: data.note
           }
