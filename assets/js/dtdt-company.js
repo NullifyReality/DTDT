@@ -3,6 +3,8 @@
 
   var currentCompany = null;
   var currentStateResponses = [];
+  var stateReportPageByState = {};
+  var stateReportCommentRequest = 0;
 
   var STATE_MAP = [
     { code: "AK", name: "Alaska", row: 1, col: 1 },
@@ -121,7 +123,8 @@
   function renderCompany(company, stateResponses) {
     document.title = company.name + " - Do They Drug Test?";
     setText("companyName", company.name);
-    setText("companyIndustry", [company.industry, company.state].filter(Boolean).join(" / "));
+    setText("companyIndustry", companySummary(company));
+    setText("discussionTitle", "Discussion for " + reportLocation(company) + " report");
     setText("companyUpdated", company.lastUpdatedAt ? new Date(company.lastUpdatedAt).toLocaleDateString() : "Unknown");
     setText("pendingSuggestions", String(company.pendingSuggestionCount || 0));
     setText("upvotes", String(company.upvotes || 0));
@@ -177,10 +180,10 @@
       button.dataset.state = state.code;
       button.dataset.hasRecord = hasRecord ? "true" : "false";
       button.disabled = !hasRecord;
-      button.title = state.name + (hasRecord ? " - " + records.length + " approved " + plural(records.length, "record") : " - no record");
+      button.title = state.name + (hasRecord ? " - " + records.length + " approved " + plural(records.length, "report") : " - no report");
       button.setAttribute(
         "aria-label",
-        state.name + (hasRecord ? ", " + records.length + " approved " + plural(records.length, "response") : ", no response")
+        state.name + (hasRecord ? ", " + records.length + " approved " + plural(records.length, "report") : ", no report")
       );
       if (state.code === currentState) button.classList.add("is-current");
       if (state.code === selectedState) button.classList.add("is-selected");
@@ -192,7 +195,7 @@
       map.appendChild(button);
     });
 
-    renderSelectedState(panel, selectedState, grouped, company);
+    renderSelectedState(panel, selectedState, grouped, company, defaultReportIndex(selectedState, grouped, company));
   }
 
   function combineStateResponses(company, responses) {
@@ -232,13 +235,13 @@
     var summary = document.getElementById("stateMapSummary");
     if (!summary) return;
     if (!responseCount) {
-      summary.textContent = "No state-specific responses in the database yet.";
+      summary.textContent = "No location-specific reports in the database yet.";
       return;
     }
     summary.textContent =
       responseCount +
       " approved " +
-      plural(responseCount, "response") +
+      plural(responseCount, "report") +
       " across " +
       stateCount +
       " " +
@@ -246,44 +249,105 @@
       ".";
   }
 
-  function selectState(stateCode, grouped, company) {
+  function selectState(stateCode, grouped, company, activeIndex) {
     Array.prototype.slice.call(document.querySelectorAll("#stateMap .state-tile")).forEach(function (button) {
       button.classList.toggle("is-selected", button.dataset.state === stateCode);
     });
-    renderSelectedState(document.getElementById("stateResponsePanel"), stateCode, grouped, company);
+    var records = grouped[stateCode] || [];
+    var index = clampReportIndex(activeIndex !== undefined ? activeIndex : stateReportPageByState[stateCode] || 0, records.length);
+    stateReportPageByState[stateCode] = index;
+    renderSelectedState(document.getElementById("stateResponsePanel"), stateCode, grouped, company, index);
   }
 
-  function renderSelectedState(panel, stateCode, grouped, company) {
+  function renderSelectedState(panel, stateCode, grouped, company, activeIndex) {
     if (!panel) return;
     panel.textContent = "";
 
     if (!stateCode) {
       var emptyTitle = document.createElement("h3");
       emptyTitle.className = "h5 text-dark";
-      emptyTitle.textContent = "No State Records";
+      emptyTitle.textContent = "No Location Reports";
       panel.appendChild(emptyTitle);
 
       var empty = document.createElement("p");
       empty.className = "text-muted mb-0";
-      empty.textContent = "Approved company records with a state will appear here.";
+      empty.textContent = "Approved reports with a state will appear here.";
       panel.appendChild(empty);
       return;
     }
 
     var records = grouped[stateCode] || [];
+    var index = clampReportIndex(activeIndex !== undefined ? activeIndex : 0, records.length);
+    var record = records[index];
     var title = document.createElement("h3");
     title.className = "h5 text-dark mb-1";
-    title.textContent = stateName(stateCode);
+    title.textContent = stateName(stateCode) + " Reports";
     panel.appendChild(title);
 
     var count = document.createElement("p");
     count.className = "text-muted small";
-    count.textContent = records.length + " approved " + plural(records.length, "response");
+    count.textContent = records.length ? "Report " + (index + 1) + " of " + records.length : "No approved reports";
     panel.appendChild(count);
 
-    records.forEach(function (record) {
-      panel.appendChild(stateResponseCard(record, company));
+    if (!record) return;
+
+    if (records.length > 1) {
+      panel.appendChild(stateReportPager(stateCode, grouped, company, index, records.length));
+    }
+
+    panel.appendChild(stateResponseCard(record, company));
+
+    var comments = document.createElement("div");
+    comments.className = "state-report-comments mt-3";
+    comments.dataset.reportId = record.id;
+    comments.textContent = "Loading comments...";
+    panel.appendChild(comments);
+    loadStateReportComments(record, comments);
+  }
+
+  function defaultReportIndex(stateCode, grouped, company) {
+    var records = grouped[stateCode] || [];
+    var currentIndex = records.findIndex(function (record) {
+      return company && record.id === company.id;
     });
+    return currentIndex >= 0 ? currentIndex : clampReportIndex(stateReportPageByState[stateCode] || 0, records.length);
+  }
+
+  function clampReportIndex(index, total) {
+    if (!total) return 0;
+    return Math.min(Math.max(Number(index) || 0, 0), total - 1);
+  }
+
+  function stateReportPager(stateCode, grouped, company, index, total) {
+    var pager = document.createElement("div");
+    pager.className = "state-report-pager mb-3";
+
+    var previous = document.createElement("button");
+    previous.type = "button";
+    previous.className = "btn btn-sm btn-outline-primary";
+    previous.textContent = "Previous report";
+    previous.disabled = index <= 0;
+    previous.addEventListener("click", function () {
+      selectState(stateCode, grouped, company, index - 1);
+    });
+    pager.appendChild(previous);
+
+    var label = document.createElement("span");
+    label.className = "text-muted small";
+    label.textContent = index + 1 + " / " + total;
+    pager.appendChild(label);
+
+    var next = document.createElement("button");
+    next.type = "button";
+    next.className = "btn btn-sm btn-outline-primary";
+    next.textContent = "Next report";
+    next.disabled = index >= total - 1;
+    next.addEventListener("click", function () {
+      selectState(stateCode, grouped, company, index + 1);
+    });
+    pager.appendChild(next);
+
+    return pager;
   }
 
   function stateResponseCard(record, current) {
@@ -298,14 +362,20 @@
     name.className = "fw-bold text-dark";
     name.textContent = record.name || "Company record";
     if (record.id !== current.id) {
-      name.href = "company.html?slug=" + encodeURIComponent(record.slug);
+      name.href = companyHref(record);
     }
     heading.appendChild(name);
 
     var meta = document.createElement("div");
     meta.className = "text-muted small";
-    meta.textContent = [record.industry, record.state].filter(Boolean).join(" / ") || "State record";
+    meta.textContent = "Report location: " + reportLocation(record);
     heading.appendChild(meta);
+    if (record.industry) {
+      var industry = document.createElement("div");
+      industry.className = "text-muted small";
+      industry.textContent = "Industry: " + record.industry;
+      heading.appendChild(industry);
+    }
     header.appendChild(heading);
 
     if (record.id === current.id) {
@@ -333,6 +403,12 @@
     updated.textContent = "Last updated: " + (record.lastUpdatedAt ? new Date(record.lastUpdatedAt).toLocaleDateString() : "Unknown");
     article.appendChild(updated);
 
+    var discussion = document.createElement("a");
+    discussion.className = "btn btn-sm btn-outline-primary mt-3";
+    discussion.href = record.id === current.id ? "#discussionSection" : companyHref(record, "#discussionSection");
+    discussion.textContent = record.id === current.id ? "Jump to this discussion" : "Open this report and discussion";
+    article.appendChild(discussion);
+
     return article;
   }
 
@@ -356,6 +432,80 @@
     note.appendChild(strong);
     note.appendChild(document.createTextNode(value));
     parent.appendChild(note);
+  }
+
+  function companySummary(company) {
+    var summary = [];
+    if (company.industry) summary.push(company.industry);
+    summary.push("Report location: " + reportLocation(company));
+    return summary.join(" / ");
+  }
+
+  function reportLocation(record) {
+    var state = normalizeStateCode(record.state);
+    var location = String(record.headquarters || "").trim();
+    return [location, state ? stateName(state) : ""].filter(Boolean).join(", ") || "Location not listed";
+  }
+
+  function companyHref(record, hash) {
+    return "company.html?slug=" + encodeURIComponent(record.slug) + (hash || "");
+  }
+
+  async function loadStateReportComments(record, container) {
+    var requestId = String(++stateReportCommentRequest);
+    container.dataset.requestId = requestId;
+    try {
+      var data = await DTDT.request("/api/companies/" + record.id + "/comments?pageSize=3", { auth: false });
+      if (container.dataset.requestId !== requestId || container.dataset.reportId !== record.id) return;
+      renderStateReportComments(record, container, data);
+    } catch (error) {
+      if (container.dataset.requestId !== requestId) return;
+      container.textContent = error.message || "Unable to load comments.";
+    }
+  }
+
+  function renderStateReportComments(record, container, data) {
+    container.textContent = "";
+
+    var title = document.createElement("h4");
+    title.className = "h6 text-dark mb-2";
+    title.textContent = "Comments for this report";
+    container.appendChild(title);
+
+    var comments = data.comments || [];
+    if (!comments.length) {
+      var empty = document.createElement("p");
+      empty.className = "text-muted small mb-2";
+      empty.textContent = "No comments yet for this report.";
+      container.appendChild(empty);
+    } else {
+      comments.forEach(function (comment) {
+        container.appendChild(stateReportCommentNode(comment));
+      });
+    }
+
+    var link = document.createElement("a");
+    link.className = "btn btn-sm btn-outline-primary mt-2";
+    link.href = currentCompany && record.id === currentCompany.id ? "#discussionSection" : companyHref(record, "#discussionSection");
+    link.textContent = data.total > comments.length ? "Open all " + data.total + " comments" : "Open discussion";
+    container.appendChild(link);
+  }
+
+  function stateReportCommentNode(comment) {
+    var article = document.createElement("article");
+    article.className = "state-report-comment small";
+
+    var meta = document.createElement("div");
+    meta.className = "text-muted mb-1";
+    meta.textContent = (comment.author && comment.author.displayName ? comment.author.displayName : "User") + " / " + new Date(comment.createdAt).toLocaleString();
+    article.appendChild(meta);
+
+    var body = document.createElement("p");
+    body.className = "mb-0";
+    body.textContent = comment.body;
+    article.appendChild(body);
+
+    return article;
   }
 
   function normalizeStateCode(value) {

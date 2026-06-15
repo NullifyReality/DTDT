@@ -122,7 +122,7 @@
             <section class="mt-4 pt-0 py-5">
                 <div class="row">
                     <div class="col-md-8 offset-md-2">
-                        <input class="form-control-lg mb-3 w-100" type="search" id="Search-Bar-1" placeholder="Search company names or industries..." autofocus style="background: rgba(163,163,163,0.96); border-radius: 14px; border: 3px solid var(--bs-black); text-align: center;">
+                        <input class="form-control-lg mb-3 w-100" type="search" id="Search-Bar-1" placeholder="Search company names, industries, or locations..." autofocus style="background: rgba(163,163,163,0.96); border-radius: 14px; border: 3px solid var(--bs-black); text-align: center;">
 
                         <div class="d-flex justify-content-center mb-4">
                             <button class="btn btn-primary me-2" id="open-filters" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvas-menu" style="border-radius: 4px;">
@@ -142,7 +142,7 @@
                         <div class="loading-spinner" id="loadingSpinner"></div>
 
                         <div class="results-info" id="resultsInfo" style="display: none;">
-                            Found <span id="resultsCount">0</span> companies
+                            Found <span id="resultsCount">0</span> reports
                             <span id="pageInfo" class="float-end">Page 1</span>
                         </div>
 
@@ -161,7 +161,7 @@
 
     <div class="offcanvas offcanvas-start bg-body" tabindex="-1" id="offcanvas-menu" aria-labelledby="offcanvasMenuLabel">
         <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="offcanvasMenuLabel">Search Filters</h5>
+            <h5 class="offcanvas-title" id="offcanvasMenuLabel">Report Filters</h5>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
@@ -171,7 +171,7 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label"><strong>State</strong></label>
+                <label class="form-label"><strong>Report state</strong></label>
                 <select class="form-select" id="stateFilter">
                     <option value="">All States</option>
                     <option value="AL">Alabama</option>
@@ -302,6 +302,6 @@
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>
     <script src="assets/js/script.min.js"></script>
     <script src="assets/js/dtdt-api.js?v=20260611-auth-nav1"></script>
-    <script src="assets/js/dtdt-search.js?v=20260611-random-blank1"></script>
+    <script src="assets/js/dtdt-search.js?v=20260615-location1"></script>
 </body>
 </html>

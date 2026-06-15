@@ -182,7 +182,7 @@
       return;
     }
 
-    setQueueState("Completed", job.results && job.results.random ? "Showing random companies." : "Search completed.");
+    setQueueState("Completed", job.results && job.results.random ? "Showing random reports." : "Search completed.");
     displayResults(job.results || { results: [], total: 0, page: currentPage, hasNext: false });
   }
 
@@ -207,11 +207,11 @@
     if (!results.length) {
       var empty = document.createElement("div");
       empty.className = "alert alert-info";
-      empty.textContent = "No companies found matching your criteria.";
+      empty.textContent = "No reports found matching your criteria.";
       container.appendChild(empty);
     } else {
-      results.forEach(function (company) {
-        container.appendChild(companyCard(company));
+      results.forEach(function (report) {
+        container.appendChild(companyCard(report));
       });
     }
 
@@ -241,9 +241,14 @@
 
     var industry = document.createElement("small");
     industry.className = "text-muted";
-    industry.textContent = [company.industry, company.state].filter(Boolean).join(" / ");
+    industry.textContent = company.industry || "Industry not listed";
     header.appendChild(industry);
     item.appendChild(header);
+
+    var location = document.createElement("div");
+    location.className = "text-muted small mt-1";
+    location.textContent = "Report location: " + reportLocation(company);
+    item.appendChild(location);
 
     var badges = document.createElement("div");
     badges.className = "mt-2 policy-badges";
@@ -257,11 +262,17 @@
     meta.textContent =
       "Last updated: " +
       (company.lastUpdatedAt ? new Date(company.lastUpdatedAt).toLocaleDateString() : "Unknown") +
+      " | Comments: " +
+      (company.commentCount || 0) +
       " | Pending suggestions: " +
       (company.pendingSuggestionCount || 0);
     item.appendChild(meta);
 
     return item;
+  }
+
+  function reportLocation(company) {
+    return [company.headquarters, company.state].filter(Boolean).join(", ") || "Location not listed";
   }
 
   function policyBadge(label, value) {
@@ -300,7 +311,7 @@
     container.textContent = "";
     var empty = document.createElement("div");
     empty.className = "alert alert-info";
-    empty.textContent = "Search for a company, or press Search with an empty box to see random company records.";
+    empty.textContent = "Search for a company, location, or policy, or press Search with an empty box to see random reports.";
     container.appendChild(empty);
   }
 

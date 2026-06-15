@@ -26,8 +26,11 @@
         .state-tile.is-current { box-shadow: 0 0 0 2px #0d6efd inset; }
         .state-tile.is-selected { background: #0d6efd; border-color: #0a58ca; color: #fff; }
         .state-response-panel { background: #fff; border: 1px solid #dee2e6; border-radius: 8px; min-height: 100%; padding: 1rem; }
-        .state-response-card { border-bottom: 1px solid #e9ecef; margin-bottom: 1rem; padding-bottom: 1rem; }
-        .state-response-card:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
+        .state-response-card { margin-bottom: 1rem; }
+        .state-report-comments { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: .75rem; }
+        .state-report-comment { border-top: 1px solid #e9ecef; margin-top: .65rem; padding-top: .65rem; }
+        .state-report-comment:first-child { border-top: 0; margin-top: 0; padding-top: 0; }
+        .state-report-pager { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem; justify-content: space-between; }
         .state-response-grid { display: grid; gap: .5rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .state-response-grid span { color: #5c636a; display: block; font-size: .75rem; text-transform: uppercase; }
         .state-response-grid strong { color: #212529; display: block; }
@@ -85,18 +88,18 @@
                     <div class="company-state-panel mt-4">
                         <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
                             <div>
-                                <h2 class="h5 text-dark mb-1">USA State Responses</h2>
-                                <p class="text-muted small mb-0" id="stateMapSummary">Loading state responses...</p>
+                                <h2 class="h5 text-dark mb-1">Location Reports by State</h2>
+                                <p class="text-muted small mb-0" id="stateMapSummary">Loading location reports...</p>
                             </div>
                             <div class="state-map-legend" aria-hidden="true">
-                                <span class="has-record">Record</span>
+                                <span class="has-record">Report</span>
                                 <span class="current-record">Current</span>
-                                <span class="no-record">No record</span>
+                                <span class="no-record">No report</span>
                             </div>
                         </div>
                         <div class="row g-4 mt-2">
                             <div class="col-lg-7">
-                                <div id="stateMap" class="state-tile-map" role="list" aria-label="USA state response map"></div>
+                                <div id="stateMap" class="state-tile-map" role="list" aria-label="USA location report map"></div>
                             </div>
                             <div class="col-lg-5">
                                 <div id="stateResponsePanel" class="state-response-panel" aria-live="polite"></div>
@@ -128,11 +131,11 @@
                 </div>
             </div>
 
-            <div class="row g-4 mt-2">
+            <div class="row g-4 mt-2" id="discussionSection">
                 <div class="col-lg-7">
                     <div class="card">
                         <div class="card-body p-4">
-                            <h2 class="h4 text-dark">Discussion</h2>
+                            <h2 class="h4 text-dark" id="discussionTitle">Discussion</h2>
                             <div id="comments" class="mb-4">Loading comments...</div>
                             <form id="commentForm">
                                 <div class="alert form-message" style="display: none;"></div>
@@ -193,6 +196,6 @@
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>
     <script src="assets/js/script.min.js"></script>
     <script src="assets/js/dtdt-api.js?v=20260611-auth-nav1"></script>
-    <script src="assets/js/dtdt-company.js?v=20260611-state-map1"></script>
+    <script src="assets/js/dtdt-company.js?v=20260615-location1"></script>
 </body>
 </html>

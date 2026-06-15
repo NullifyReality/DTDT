@@ -29,20 +29,23 @@
                             <h1 class="h3 text-center mb-4 text-dark">Submit company information</h1>
                             <form id="submissionForm" style="display: none;">
                                 <div class="alert form-message" style="display: none;"></div>
+                                <div class="alert alert-info" role="alert">
+                                    Submit a separate report for each work location. Use the state where the policy applies, not the company's headquarters; the same company name can appear in multiple locations.
+                                </div>
 
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label class="form-label" for="submissionType">Submission type</label>
                                         <select class="form-select" id="submissionType" name="type">
-                                            <option value="COMPANY">New company</option>
+                                            <option value="COMPANY">New location report</option>
                                             <option value="POLICY_UPDATE">Policy update</option>
                                             <option value="CORRECTION">Correction</option>
                                             <option value="EXPERIENCE">Experience</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label" for="companyId">Existing company ID</label>
-                                        <input class="form-control" id="companyId" name="companyId" placeholder="Only for updates/corrections">
+                                        <label class="form-label" for="companyId">Existing report ID</label>
+                                        <input class="form-control" id="companyId" name="companyId" placeholder="Only for updates/corrections to a report">
                                     </div>
                                 </div>
 
@@ -62,12 +65,13 @@
                                         <input class="form-control" id="industry" name="industry">
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label" for="headquarters">Headquarters</label>
-                                        <input class="form-control" id="headquarters" name="headquarters">
+                                        <label class="form-label" for="headquarters">Report location</label>
+                                        <input class="form-control" id="headquarters" name="headquarters" placeholder="City, branch, facility, or remote team">
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="form-label" for="state">State</label>
+                                        <label class="form-label" for="state">Report state</label>
                                         <input class="form-control" id="state" name="state" maxlength="2" placeholder="WA">
+                                        <div class="form-text">Use the state this report applies to.</div>
                                     </div>
                                 </div>
 
@@ -143,6 +147,6 @@
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>
     <script src="assets/js/script.min.js"></script>
     <script src="assets/js/dtdt-api.js?v=20260611-auth-nav1"></script>
-    <script src="assets/js/dtdt-submit.js?v=20260611-guard2"></script>
+    <script src="assets/js/dtdt-submit.js?v=20260615-location1"></script>
 </body>
 </html>

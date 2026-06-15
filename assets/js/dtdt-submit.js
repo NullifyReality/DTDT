@@ -14,12 +14,13 @@
       event.preventDefault();
       var message = form.querySelector(".form-message");
       var data = Object.fromEntries(new FormData(form).entries());
+      var reportState = String(data.state || "").trim().toUpperCase();
       var payload = {
         name: data.name,
         website: data.website,
         industry: data.industry,
         headquarters: data.headquarters,
-        state: data.state,
+        state: reportState,
         preEmploymentTesting: data.preEmploymentTesting,
         randomTesting: data.randomTesting,
         postAccidentTesting: data.postAccidentTesting,
